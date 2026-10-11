@@ -220,13 +220,15 @@ void main() {
     }, requests);
     await tester.pumpWidget(browser(source));
     await tester.pump();
-    await tester.drag(find.byKey(const Key('file-browse-scroll')),
-        const Offset(0, -450));
-    await tester.pump();
-    final scroll = tester.state<ScrollableState>(find.descendant(
+    final scrollable = find.descendant(
       of: find.byKey(const Key('file-browse-scroll')),
       matching: find.byType(Scrollable),
-    ));
+    );
+    await tester.scrollUntilVisible(
+      find.text('共享-12'), 180, scrollable: scrollable,
+    );
+    await tester.pump();
+    final scroll = tester.state<ScrollableState>(scrollable);
     final before = scroll.position.pixels;
     expect(before, greaterThan(0));
     await tester.tap(find.text('共享-12'));
