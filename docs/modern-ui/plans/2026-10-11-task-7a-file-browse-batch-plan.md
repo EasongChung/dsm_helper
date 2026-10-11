@@ -399,7 +399,7 @@ Selection is keyed by exact nonempty DSM `FileItem.path` within this controller'
 
 `NewUiPrimaryPage` adds optional `VoidCallback? onOpenBrowsePreview` (default null). When present, render a secondary `OutlinedButton` labeled `试用新版文件浏览（测试）`, key `file-browse-preview`, **after** original primary legacy button. Non-Files placeholders without callback render unchanged.
 
-`NewUiAppDestination` adds optional `WidgetBuilder? browsePreviewBuilder` (default null). `NewUiAppShell` uses only this explicit optional callback to `Navigator.of(tabContext).push(MaterialPageRoute(builder: browsePreviewBuilder))` **within Files tab**, not `rootNavigator:true`. Do not introduce `modernBuilder` for the Files root in Task 7A. `DsmNewUiShell` supplies `FileBrowsePage(contextId: widget.contextId ?? 'legacy-current-context', onOpenNotifications: ..., onReauthNeeded: widget.onReauthNeeded, ...)` through the existing context-keyed subtree. To preserve the global notification authority in this callback, make the preview builder receive or capture the existing `onOpenNotifications` callback without a second notification route/client; the minimal compatible signature may be refined **only within these three wiring files** to pass it. Capture connection-status string similarly, not through a new global singleton.
+`NewUiAppDestination` adds optional `NewUiModernRootBuilder? browsePreviewBuilder` (default null), **reusing the existing typedef in `new_ui_app_shell.dart`** so both existing callbacks are explicit: `(BuildContext context, {required VoidCallback onOpenNotifications, required String? connectionStatusText})`. `NewUiAppShell` creates an `onOpenBrowsePreview` callback *only* when this builder is non-null. It calls `Navigator.of(tabContext).push(MaterialPageRoute<void>(builder: (previewContext) => browsePreviewBuilder(previewContext, onOpenNotifications: openNotifications, connectionStatusText: connectionStatusText)))` on the **current Files tab** (`rootNavigator` remains false). Do not introduce `modernBuilder` for the Files root in Task 7A. In `DsmNewUiShell`, supply a Files-only `browsePreviewBuilder` returning `FileBrowsePage(contextId: widget.contextId ?? 'legacy-current-context', onOpenNotifications: onOpenNotifications, connectionStatusText: connectionStatusText, onReauthNeeded: widget.onReauthNeeded)`. No new notification path or global session singleton.
 
 ### Task 5.1 — Files-only preview entry RED→GREEN
 
@@ -426,7 +426,7 @@ Selection is keyed by exact nonempty DSM `FileItem.path` within this controller'
   - `flutter analyze lib/new_ui test/new_ui`
   - Existing Android beta APK job/artifact/signature identity under `APK-IDENTITY-01`.
 - [ ] Compare `git diff <B5-start>...HEAD` and the whole Task `git diff b80a59c6...HEAD`. Allowed feature code: `lib/new_ui/files/**`; allowed minimal seams: `FileStationList.dart` named list page params, `NewUiPrimaryPage`/`NewUiAppShell`/`DsmNewUiShell`. Only tests/acceptance/docs otherwise.
-- [ ] Prove ``T7A-DATA-01…06`, ``T7A-PATH-01/02`, ``T7A-VIEW-01/02`, ``T7A-SEL-01…04`, ``T7A-STATE-01`, ``T7A-SHELL-01/02` and ``T7A-CUTOVER-01`; list tests/CI evidence per row.
+- [ ] Prove `T7A-DATA-01…06`, `T7A-PATH-01/02`, `T7A-VIEW-01/02`, `T7A-SEL-01…04`, `T7A-STATE-01`, `T7A-SHELL-01/02` and `T7A-CUTOVER-01`; list tests/CI evidence per row.
 - [ ] Before an APK is handed to the user, confirm CI artifact corresponds to current code SHA and the same package ID/signing fingerprint. Do not fabricate device findings from CI.
 
 ### Task 5.4 — Real DSM/Android device acceptance
