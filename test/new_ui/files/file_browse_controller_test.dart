@@ -347,4 +347,63 @@ void main() {
     controller.dispose();
   });
 
+  test('missing total permits truly empty listing and exact-full final empty page', () async {
+    final calls = <FileBrowseRequest>[];
+    final empty = FileBrowseController(
+      dataSource: source((request) async => page(request, []), calls),
+      contextId: 'NAS-A/user', path: '/share',
+    );
+    await empty.loadInitial();
+    expect(empty.phase, FileBrowsePhase.valid);
+    expect(empty.isComplete, isTrue);
+    expect(empty.visibleItems, isEmpty);
+    empty.dispose();
+
+    final unknownCalls = <FileBrowseRequest>[];
+    final exactlyFull = FileBrowseController(
+      dataSource: source((request) async => page(request,
+        request.offset == 0 ? items(0, 100) : []), unknownCalls),
+      contextId: 'NAS-A/user', path: '/share',
+    );
+    await exactlyFull.loadInitial();
+    expect(exactlyFull.hasMore, isTrue);
+    await exactlyFull.loadNext();
+    expect(exactlyFull.isComplete, isTrue);
+    expect(exactlyFull.phase, FileBrowsePhase.valid);
+    expect(exactlyFull.visibleItems, hasLength(100));
+    expect(unknownCalls.map((r) => r.offset), [0, 100]);
+    exactlyFull.dispose();
+  });
+
+  test('short page that contradicts reported total remains incomplete', () async {
+    final calls = <FileBrowseRequest>[];
+    final controller = FileBrowseController(
+      dataSource: source((r) async => page(r, items(0, 10), total: 250), calls),
+      contextId: 'NAS-A/user', path: '/share',
+    );
+    await controller.loadInitial();
+    expect(controller.phase, FileBrowsePhase.partial);
+    expect(controller.isComplete, isFalse);
+    expect(controller.error, isNotNull);
+    expect(controller.visibleItems, hasLength(10));
+    controller.dispose();
+  });
+
+  test('duplicate paths cannot satisfy an otherwise completed known total', () async {
+    final calls = <FileBrowseRequest>[];
+    final controller = FileBrowseController(
+      dataSource: source((r) async =>
+        page(r, List<FileItem>.generate(100,
+          (i) => FileItem(name: 'row $i', path: '/share/${i ~/ 2}')),
+          total: 100), calls),
+      contextId: 'NAS-A/user', path: '/share',
+    );
+    await controller.loadInitial();
+    expect(controller.visibleItems, hasLength(50));
+    expect(controller.phase, FileBrowsePhase.partial);
+    expect(controller.isComplete, isFalse);
+    expect(controller.error, isNotNull);
+    controller.dispose();
+  });
+
 }
