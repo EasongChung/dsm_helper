@@ -161,4 +161,88 @@ void main() {
     expect(find.text('item-100'), findsWidgets);
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('verified folder pushes nested routes; file remains read-only; crumb pops existing ancestor',
+      (tester) async {
+    final requests = <String>[];
+    final routes = <String?>[];
+    final source = testSource((path, offset) async {
+      final files = switch (path) {
+        null => [browseItem('共享 A', '/share', directory: true)],
+        '/share' => [
+          browseItem('深入子目录', '/share/sub', directory: true),
+          browseItem('不可预览.flac', '/share/song.flac'),
+        ],
+        '/share/sub' => [browseItem('最深文件.txt', '/share/sub/f.txt')],
+        _ => <FileItem>[],
+      };
+      return FileStationList(files: files, offset: offset, total: files.length);
+    }, requests);
+    await tester.pumpWidget(MaterialApp(home: FileBrowsePage(
+      contextId: 'NAS-A/account',
+      dataSource: source,
+      onOpenNotifications: () {},
+    )));
+    await tester.pump();
+    await tester.tap(find.text('共享 A'));
+    await tester.pumpAndSettle();
+    expect(requests, contains('/share:0:100:name:ASC'));
+    expect(find.text('不可预览.flac'), findsOneWidget);
+    await tester.tap(find.text('不可预览.flac'));
+    await tester.pump();
+    expect(requests, hasLength(2));
+    await tester.tap(find.text('深入子目录'));
+    await tester.pumpAndSettle();
+    expect(requests, contains('/share/sub:0:100:name:ASC'));
+    expect(find.text('最深文件.txt'), findsOneWidget);
+    expect(find.byKey(const Key('file-browse-crumb:root')), findsOneWidget);
+    expect(find.byKey(const Key('file-browse-crumb:/share')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('file-browse-crumb:/share')));
+    await tester.pumpAndSettle();
+    expect(find.text('不可预览.flac'), findsOneWidget);
+    expect(find.text('最深文件.txt'), findsNothing);
+    expect(requests, hasLength(3)); // Parent retained its completed snapshot.
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('共享 A'), findsOneWidget);
+    expect(requests, hasLength(3));
+    expect(tester.takeException(), isNull);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('Android Back pops one directory and preserves parent scroll position',
+      (tester) async {
+    final requests = <String>[];
+    final source = testSource((path, offset) async {
+      final files = path == null
+          ? List<FileItem>.generate(
+              40, (i) => browseItem('共享-$i', '/share-$i', directory: true))
+          : <FileItem>[browseItem('子文件', '$path/file')];
+      return FileStationList(files: files, offset: offset, total: files.length);
+    }, requests);
+    await tester.pumpWidget(browser(source));
+    await tester.pump();
+    await tester.drag(find.byKey(const Key('file-browse-scroll')),
+        const Offset(0, -450));
+    await tester.pump();
+    final scroll = tester.state<ScrollableState>(find.descendant(
+      of: find.byKey(const Key('file-browse-scroll')),
+      matching: find.byType(Scrollable),
+    ));
+    final before = scroll.position.pixels;
+    expect(before, greaterThan(0));
+    await tester.tap(find.text('共享-12'));
+    await tester.pumpAndSettle();
+    expect(find.text('子文件'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('子文件'), findsNothing);
+    expect(find.text('共享-12'), findsOneWidget);
+    final restored = tester.state<ScrollableState>(find.descendant(
+      of: find.byKey(const Key('file-browse-scroll')),
+      matching: find.byType(Scrollable),
+    ));
+    expect(restored.position.pixels, closeTo(before, 1));
+    expect(requests, hasLength(2));
+    expect(tester.takeException(), isNull);
+  }, timeout: const Timeout(Duration(seconds: 30)));
 }
