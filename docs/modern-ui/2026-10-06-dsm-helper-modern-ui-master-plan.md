@@ -709,10 +709,11 @@ The Task 7A documentation-only preflight was prepared on `feature/t7a-file-brows
 
 - `docs/modern-ui/specs/2026-10-11-task-7a-file-browse-feature-design.md`
 - `docs/modern-ui/contracts/2026-10-11-task-7a-file-browse-contract-matrix.md`
+- `docs/modern-ui/plans/2026-10-11-task-7a-file-browse-batch-plan.md` — five reviewable implementation Batches, plan-only (2026-10-11).
 
 The reviewed design audits actual legacy listing/pagination, full-path identity, selection, navigation, state and the current Modern shell. It selects incremental rather than unbounded eager page loading, route-scoped browse state in the existing Files-tab Navigator, and a secondary clearly labeled test-preview entry from the Files placeholder. The primary existing Files/Legacy handoff remains the complete feature. Full file-operation/preview cutover belongs to Task 7B/7C and a later real-device gate.
 
-**Status: PREFLIGHT REVIEWED — feature-specific design and contracts frozen for planning only.** On 2026-10-11, after receipt of the draft, the user requested proceeding to the next step; the assistant completed source/cross-contract technical review and refined the documents. This is continuation approval, **not** an assertion of per-clause human inspection or physical-device acceptance. The standing user boundary **“先不拆batch”** remains binding. No Batch Plan, Task 7A production code, APK build, integration PR or merge is authorized; Batch planning needs its own explicit request.
+**Status: BATCH PLAN DRAFTED — implementation not started.** Preflight feature design and 18 feature contracts were technically reviewed/frozen on 2026-10-11. Following a further separate user instruction (“继续下一步”), the implementation plan divides Task 7A into B1–B5, each with TDD/contract/acceptance gates. The preceding no-batch instruction applied to earlier preflight turns and is superseded **only for writing the plan**. This does not imply user has reviewed every plan clause. **No Batch, feature code, APK build, integration PR or merge is authorized by writing this plan.** Start B1 only on a separate instruction.
 
 ---
 
@@ -1128,4 +1129,4 @@ docs/modern-ui/plans/2026-10-10-task-6-applications-settings-batch-plan.md
 Task 7A — File Station: Browse Foundation
 ```
 
-Task 7A Feature Design and Contract Matrix have completed technical preflight review on `feature/t7a-file-browse` (see Task 7A Preflight above). They are frozen **for later planning only**; no Batch split/plan, feature code, integration PR or merge has been started. The user's separate permission is required before Batch planning. Task 6 completion does not authorize Task 7 implementation.
+Task 7A preflight and the five-Batch Execution Plan are committed on `feature/t7a-file-browse` (see Task 7A Preflight above). No implementation Batch has started. Review the Batch Plan first; **B1 requires an explicit instruction**, and later Batches, PR and merge each require their own gates. Task 6 completion does not authorize Task 7 implementation.
