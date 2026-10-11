@@ -1,0 +1,192 @@
+import 'package:dsm_helper/apis/api.dart';
+import 'package:dsm_helper/models/photos/photo_model.dart';
+import 'package:dsm_helper/utils/utils.dart' hide Api;
+
+/// limit : 102
+/// list : [{"day":22,"item_count":2,"month":10,"year":2022},{"day":21,"item_count":6,"month":10,"year":2022},{"day":23,"item_count":43,"month":9,"year":2022},{"day":7,"item_count":4,"month":8,"year":2022},{"day":28,"item_count":2,"month":6,"year":2022},{"day":22,"item_count":1,"month":5,"year":2022},{"day":20,"item_count":5,"month":5,"year":2022},{"day":10,"item_count":1,"month":5,"year":2022},{"day":25,"item_count":12,"month":4,"year":2022},{"day":27,"item_count":26,"month":3,"year":2022}]
+/// offset : 0
+
+class TimelineModel {
+  TimelineModel({
+    this.limit,
+    this.days,
+    this.offset,
+  });
+  static Future<List<TimelineModel>> fetch({bool isTeam = false, String? type, num? geocodingId, num? generalTagId, bool recentlyAdd = false, List<int> itemTypes = const []}) async {
+    Map<String, dynamic> data = {};
+    if (type != null) {
+      data['type'] = type;
+    }
+    if (geocodingId != null) {
+      data['geocoding_id'] = geocodingId;
+    }
+    if (generalTagId != null) {
+      data['general_tag_id'] = generalTagId;
+    }
+    // if (itemTypes != null && itemTypes.length > 0) {
+    //   data['item_type'] = jsonEncode(itemTypes);
+    //   data['method'] = "get_with_filter";
+    // }
+    print(data);
+    DsmResponse res = await Api.dsm.entry("SYNO.Foto${isTeam ? 'Team' : ''}.Browse.${recentlyAdd ? 'RecentlyAdded' : 'Timeline'}", recentlyAdd ? "get_timeline" : 'get', version: 2, data: data);
+    // var res = await Utils.post("entry.cgi", data: data);
+    print(res);
+    if (res.success == true) {
+      List data = res.data!['section'];
+      List<TimelineModel> timeline = [];
+      data.forEach((e) {
+        timeline.add(TimelineModel.fromJson(e));
+      });
+      return timeline;
+    } else {
+      throw Exception();
+    }
+  }
+
+  TimelineModel.fromJson(dynamic json) {
+    limit = json['limit'];
+    if (json['list'] != null) {
+      days = [];
+      json['list'].forEach((v) {
+        days!.add(Day.fromJson(v));
+      });
+    }
+    offset = json['offset'];
+  }
+  num? limit;
+  List<Day>? days;
+  num? offset;
+  TimelineModel copyWith({
+    num? limit,
+    List<Day>? days,
+    num? offset,
+  }) =>
+      TimelineModel(
+        limit: limit ?? this.limit,
+        days: days ?? this.days,
+        offset: offset ?? this.offset,
+      );
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    map['limit'] = limit;
+    if (days != null) {
+      map['list'] = days!.map((v) => v.toJson()).toList();
+    }
+    map['offset'] = offset;
+    return map;
+  }
+}
+
+/// day : 22
+/// item_count : 2
+/// month : 10
+/// year : 2022
+
+class Day {
+  Day({
+    this.day,
+    this.itemCount,
+    this.month,
+    this.year,
+  });
+
+  Day.fromJson(dynamic json) {
+    day = json['day'];
+    itemCount = json['item_count'];
+    month = json['month'];
+    year = json['year'];
+  }
+  int? day;
+  int? itemCount;
+  int? month;
+  int? year;
+  num? startPosition;
+  num? endPosition;
+  bool? loading;
+  List<PhotoModel> photos = [];
+
+  Future fetchPhotos({bool isTeam = false, String? type, num? geocodingId, num? generalTagId, bool recentlyAdd = false, List<int> itemTypes = const []}) async {
+    if(photos.isNotEmpty){
+      return photos;
+    }
+    Map<String, dynamic> data = {
+      "offset": 0,
+      "limit": itemCount,
+      "additional": '["thumbnail","resolution","orientation","video_convert","video_meta","address"]',
+      // "timeline_group_unit": "day",
+    };
+    if (type != null) {
+      data['type'] = type;
+    }
+    if (geocodingId != null) {
+      data['geocoding_id'] = geocodingId;
+    }
+    if (generalTagId != null) {
+      data['general_tag_id'] = generalTagId;
+    }
+    // if (itemTypes != null && itemTypes.length > 0) {
+    //   data['item_type'] = jsonEncode(itemTypes);
+    //   data['method'] = "list_with_filter";
+    // }
+    if (year != null && month != null && day != null) {
+      int start = DateTime(year!, month!, day!, 8).secondsSinceEpoch;
+      int end = start + 60 * 60 * 24 - 1;
+      data['start_time'] = start;
+      data['end_time'] = end;
+      // if (itemTypes != null) {
+      //   data['time'] = jsonEncode([
+      //     {"start_time": start, "end_time": end}
+      //   ]);
+      // }
+    }
+    String api = "SYNO.Foto${isTeam ? 'Team' : ''}.Browse.${recentlyAdd ? 'RecentlyAdded' : 'Item'}";
+    DsmResponse res = await Api.dsm.entry(api, "list", version: 1, path: api,data: data, parser: (json){
+      photos = [];
+      json['list'].forEach((e) {
+        photos.add(PhotoModel.fromJson(e));
+      });
+      return photos;
+    },);
+    // var res = await Utils.post("entry.cgi", data: data);
+    // print(res);
+    if (res.success == true) {
+      photos = res.data;
+    } else {
+      throw Exception();
+    }
+  }
+
+  static Future<Map> fetchLocation(int year, int month, int day) async {
+    int start = DateTime(year, month, day, 8).secondsSinceEpoch;
+    int end = start + 60 * 60 * 24 - 1;
+    Map<String, dynamic> data = {
+      "start_time": start,
+      "end_time": end,
+      "_sid": Utils.sid,
+    };
+    DsmResponse res = await Api.dsm.entry('"SYNO.${Utils.version == 7 ? "Foto" : "Photo"}.Browse.Timeline"', '"get_geocoding"', version: 1, data: data);
+    // var res = await Utils.post("entry.cgi", data: data);
+    return res.data;
+  }
+
+  Day copyWith({
+    int? day,
+    int? itemCount,
+    int? month,
+    int? year,
+  }) =>
+      Day(
+        day: day ?? this.day,
+        itemCount: itemCount ?? this.itemCount,
+        month: month ?? this.month,
+        year: year ?? this.year,
+      );
+  Map<String, dynamic> toJson() {
+    final map = <String, dynamic>{};
+    map['day'] = day;
+    map['item_count'] = itemCount;
+    map['month'] = month;
+    map['year'] = year;
+    return map;
+  }
+}
