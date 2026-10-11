@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the generic Modern `应用` and `我的` placeholders with a canonical DSM application hub, local ordered favorites, and a sectioned Modern Settings root while keeping unported feature details behind the established legacy boundary.
+**Goal:** Replace the generic Modern `应用` and `我的` placeholders with a canonical DSM application hub, local ordered favorites, and a compact Modern Settings root while keeping unported feature details behind the established legacy boundary.
 
 **Architecture:** Task 6 adds focused `lib/new_ui/applications/**` and `lib/new_ui/settings/**` layers above existing InitData, preference, Task 4 auth/account, shell and legacy-page authorities. Applications resolves DSM order into canonical launchable destinations and projects a separate local favorites preference; Settings is a root-level navigation/presentation shell that reuses existing account/logout/theme/detail capabilities. Formal shell cutover happens only after the independent catalog, favorites and UI batches pass.
 
@@ -522,7 +522,7 @@ A focused real-device visual check is useful here if an APK is already being ins
 
 **Contracts:** `T6-SET-01` through `T6-SET-06`, supports `T6-NAV-01`.
 
-**Purpose:** Build the sectioned My/Settings root using existing Task 4/theme/legacy authorities, without inventing missing power or Dynamic Color capability and without formal shell cutover.
+**Purpose (historical Batch 4 design):** Build a sectioned My/Settings root using existing Task 4/theme/legacy authorities, without inventing missing power or Dynamic Color capability and without formal shell cutover. The final Batch 5 user-approved presentation supersedes only the sectioned layout; see Task 5.7a.
 
 **Files:**
 - Create: `lib/new_ui/settings/settings_page.dart`
@@ -631,6 +631,9 @@ Inspect standard CI at exact implementation HEAD.
 ---
 
 # Batch 5 — Formal Shell Cutover / Full Relationship + Device Gate
+
+> **Final Gate: PASS (2026-10-11)** — CI #299 / final code SHA `b7ec45c31147bb39c9de9bffe38697de93f5bfed`; corrected APK accepted on device per user report. Final evidence: `docs/modern-ui/acceptance/2026-10-10-task-6-applications-settings-acceptance.md`. The old B3/B4 acceptance snapshots remain unchanged.
+
 
 **Contracts:** `T6-APP-03`, `T6-CTX-01`, `T6-NAV-01`, `T6-NOTIFY-01`, `T6-SHELL-01`, `T6-FALLBACK-01`, `T6-APK-01`; re-proves relevant B1–B4 contracts through production wiring.
 

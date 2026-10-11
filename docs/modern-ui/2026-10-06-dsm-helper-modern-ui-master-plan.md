@@ -594,7 +594,7 @@ Validation
 > Final CI: Modern UI Android CI #232 / run `37926403702` — 235 tests passed, targeted analyze clean, beta debug APK built, stable package/signing identity verified, artifact uploaded.  
 > Real-device Gate: PASS for the user's declared HTTP LAN DSM scope, including the focused Batch 7 corrective follow-up. HTTPS/self-signed, second-account, OTP and forced-119 scenarios remain explicitly **NOT TESTED**, not accepted by implication.  
 > Acceptance: [Task 5 Dashboard Acceptance](acceptance/2026-10-09-task-5-dashboard-acceptance.md).  
-> Task 6 has not started and is not implied by this completion status.
+> Task 6 completion is recorded separately below; the Task 5 acceptance remains scoped to Task 5.
 
 ### Scope
 
@@ -643,7 +643,7 @@ docs/modern-ui/plans/2026-10-09-task-5-dashboard-batch-plan.md
 
 ## Task 6 — Applications Hub + Settings Shell
 
-> **Status: PRE-FLIGHT COMPLETE — Batch planning authorized; implementation not started.**  
+> **Status: COMPLETE — Batch 1–5 implemented, CI verified, user device Gate accepted (2026-10-11).**  
 > Planning branch: `feature/t6-applications-settings`  
 > Base: `modern-ui@1e0c74b9a85b7bd2d0c5f49fc5f7661d7f638c4c`
 
@@ -686,7 +686,7 @@ Preflight 没有未解决的 blocking Contract Gap。
 docs/modern-ui/plans/2026-10-10-task-6-applications-settings-batch-plan.md
 ```
 
-实现顺序冻结为 B1 → B2 → B3 → B4 → B5。规划完成不代表任何 Batch 已获准实现。
+实现顺序为 B1 → B2 → B3 → B4 → B5；五个 Batch 均已执行并完成各自 Gate。Batch 5 包含用户要求的五项视觉修正。Task 6 最终验收见 `docs/modern-ui/acceptance/2026-10-10-task-6-applications-settings-acceptance.md`，实现 SHA `b7ec45c31147bb39c9de9bffe38697de93f5bfed`，CI #299。
 
 ---
 
@@ -1085,27 +1085,36 @@ docs/modern-ui/acceptance/2026-10-08-task-4-server-auth-acceptance.md
 
 **Task 4 Exit Gate: PASS for the expressly restricted HTTP-only personal deployment, with the above coverage exceptions.** The original broader Feature Spec remains authoritative for other environments; do not interpret this as complete HTTPS/OTP/multi-account/server-side-invalidation acceptance. The feature branch is **not merged** into `modern-ui` by this status entry.
 
-### Active
+### Completed — Task 6 (2026-10-11)
 
+Task 6 — Applications Hub + Settings Shell: **COMPLETE / PASS** on `feature/t6-applications-settings`; the user reports the final CI #299 APK passed the real-device acceptance checklist. This status records Task 6 completion, not commencement of any later Task.
+
+- B1: Canonical application catalog and explicit legacy destinations — PASS.
+- B2: Local ordered favorites, current-context filtering, write-failure handling and preservation merge — PASS.
+- B3: Modern Applications root, four-column grid, favorites and reorder surface — PASS at the historical B3 snapshot.
+- B4: Modern Settings root, existing account/theme/detail authorities — PASS at the historical B4 snapshot.
+- B5: Production shell cutover for Applications/My, notifications/Back/context relationship checks, plus five user-requested presentation corrections — **PASS**.
+
+Final implementation SHA: `b7ec45c31147bb39c9de9bffe38697de93f5bfed`. GitHub Actions `Modern UI Android CI` #299 (run `38101990946`) **success**: `flutter test` 306 passed; targeted `flutter analyze` no issues; beta debug APK built, verified and uploaded. Package: `top.apaipai.dsm_helper`; certificate SHA-256 `0b8e6e0765cfba89e156f3037b66c9e9382d91f788e5e9be50516df02313d9a2`.
+
+On 2026-10-11, the user confirmed **“验收通过”** in response to the final corrected device checklist (including the five presentation fixes). This is user-reported device acceptance, not an independent hardware test by CI. HTTPS, 2FA and a second real DSM account are **not** newly claimed as tested by Task 6.
+
+Final record:
 ```text
-Task 6 — Applications Hub + Settings Shell
-Planning complete; implementation has not started.
+docs/modern-ui/acceptance/2026-10-10-task-6-applications-settings-acceptance.md
 ```
 
-Task 6 planning authorities:
-
+Task 6 authority documents remain:
 ```text
 docs/modern-ui/specs/2026-10-10-task-6-applications-settings-feature-design.md
 docs/modern-ui/contracts/2026-10-10-task-6-applications-settings-contract-matrix.md
 docs/modern-ui/plans/2026-10-10-task-6-applications-settings-batch-plan.md
 ```
 
-The Preflight and Batch Plan are frozen on `feature/t6-applications-settings`. Task 6 planning has changed docs only; no production/test code has been implemented.
-
 ### Next (not automatically started)
 
 ```text
-Task 6 Batch 1 — Canonical Application Catalog / Destination Foundation
+Task 7A — File Station: Browse Foundation
 ```
 
-Batch 1 requires an explicit execution instruction. Planning completion does not authorize implementation.
+Task 7A requires its own preflight/design and explicit implementation instruction. Task 6 completion does not authorize Task 7 code changes.
