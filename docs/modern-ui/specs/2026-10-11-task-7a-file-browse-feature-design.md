@@ -15,7 +15,7 @@ The product must remain usable throughout migration. Existing, already-functiona
 
 Inherited authority (do not copy/redefine):
 - `docs/modern-ui/2026-10-06-dsm-helper-modern-ui-master-plan.md` — scope, branch, merge, legacy freeze, CI, T7A→T7B→T7C and final cutover.
-- `docs/modern-ui/specs/2026-10-07-dsm-helper-modern-ui-spec.md` — ``12` File Station, ``8` context/resume, ``9` App Bar, ``18–20` state, ``23` Back, ``30.6` selection.
+- `docs/modern-ui/specs/2026-10-07-dsm-helper-modern-ui-spec.md` — section 12 File Station, section 8 context/resume, section 9 App Bar, sections 18–20 state, section 23 Back, section 30.6 selection.
 - `docs/modern-ui/specs/2026-10-07-dsm-helper-modern-ui-visual-design.md` — Material 3 colors, density, title/row, list/grid, Bottom Sheet, system insets and theme.
 - `docs/modern-ui/contracts/2026-10-07-global-contract-matrix.md` — especially `G-SESS-01`, `G-NAV-01/02/03`, `G-STATE-01`, `G-NET-01`, `G-THEME-01/02`, `G-LEGACY-01`, `G-FILE-01`, `G-NOTIFY-01`, `G-ANDROID-01/02/03`, `G-PREF-01`.
 - `docs/modern-ui/contracts/2026-10-07-global-interface-protocol-inventory.md` — `SYNO.FileStation` models, session/legacy boundaries.
@@ -104,7 +104,7 @@ Do not change `DsmNewUiShell` Files destination from the known-good legacy place
 
 - **Stable identity**: within one active DSM context, the exact non-empty `FileItem.path` returned by the canonical listing identifies a file/folder for selection. Do not key by object instance, index, name, thumbnail URL or `real_path`. The active context boundary is explicit; the same literal path in another NAS account is a different logical identity.
 - Deduplicate path collisions in a page aggregation without guessing that two different paths with the same name are the same file.
-- Selection mode is per **current directory**. In normal mode horizontal swipe on a selectable directory-entry row/tile enters mode and selects that item; taps on folders navigate. In selection mode taps toggle; repeat swipe is not required.
+- Selection mode is per **ordinary file directory**. Shared-folder root entries are navigation-only in 7A (legacy does not expose the same ordinary file-operation selection there). In a file directory, normal-mode horizontal swipe on a selectable row/tile enters mode and selects that item; normal-mode folder taps navigate. In selection mode taps toggle; repeat swipe is not required.
 - Entrance gestures must respect Android system Back and not hijack breadcrumb horizontal scrolling. Implement/test both list and grid target hit areas. Normal-mode long-press action behavior stays with later Task 7B; do not silently repurpose it into a contradictory operation.
 - Selection header shows explicit exit, count and select-all. No permanent checkbox gutter or layout jump; selection is full-row/tile restrained tonal emphasis.
 - Switch list↔grid or change sort: selected paths remain selected across reordered/recreated `FileItem` objects. When a **fully valid fresh listing** confirms a selected path no longer exists, remove that path. While refresh is pending, failed, or listing is partial/incomplete, preserve prior selection and label data stale; do not infer deletion from an incomplete set.
