@@ -1,3 +1,0 @@
-class RefreshBackgroundTaskEvent {
-  RefreshBackgroundTaskEvent();
-}

@@ -1,3 +1,0 @@
-class EjectExternalDeviceEvent {
-  EjectExternalDeviceEvent();
-}
