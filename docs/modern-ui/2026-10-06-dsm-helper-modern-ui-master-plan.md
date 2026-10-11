@@ -703,6 +703,17 @@ docs/modern-ui/plans/2026-10-10-task-6-applications-settings-batch-plan.md
 
 仅冻结本批实际需要的 File contracts。
 
+### Task 7A Preflight (2026-10-11; pending user review)
+
+The Task 7A documentation-only preflight was prepared on `feature/t7a-file-browse` from `modern-ui@b80a59c61ca3baf07201478637deaa61a181c6a4`:
+
+- `docs/modern-ui/specs/2026-10-11-task-7a-file-browse-feature-design.md`
+- `docs/modern-ui/contracts/2026-10-11-task-7a-file-browse-contract-matrix.md`
+
+The proposed design audits actual legacy listing/pagination, full-path identity, selection, navigation, state and the current Modern shell. It deliberately keeps the production Files tab on its complete legacy fallback while Task 7A builds an isolated Modern browse foundation; full file-operation/preview cutover belongs to Task 7B/7C and a later real-device gate.
+
+**Status: DRAFT FOR REVIEW.** These documents are not yet a user-approved/frozen Feature Contract. No Batch plan, Task 7A feature code, CI build or integration merge is authorized by this status. Once the design and matrix are approved, Task 7A Batch planning requires its own explicit instruction.
+
 ---
 
 ## Task 7B — File Station: File Operations
@@ -1117,4 +1128,4 @@ docs/modern-ui/plans/2026-10-10-task-6-applications-settings-batch-plan.md
 Task 7A — File Station: Browse Foundation
 ```
 
-Task 7A requires its own preflight/design and explicit implementation instruction. Task 6 completion does not authorize Task 7 code changes.
+Task 7A's Feature Design and Contract Matrix are drafted on `feature/t7a-file-browse` for user review (see Task 7A Preflight above). They do not yet authorize Batch planning, production code changes or integration merge. Task 6 completion does not authorize Task 7 code changes.
