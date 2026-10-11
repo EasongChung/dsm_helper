@@ -4,7 +4,6 @@ import 'package:dsm_helper/models/Syno/FileStation/FileStationList.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_controller.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_data_source.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_page_model.dart';
-import 'package:dsm_helper/new_ui/files/file_browse_state.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 List<FileItem> items(int start, int length, {String prefix = '/share'}) =>
