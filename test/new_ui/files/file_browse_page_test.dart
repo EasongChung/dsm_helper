@@ -165,7 +165,6 @@ void main() {
   testWidgets('verified folder pushes nested routes; file remains read-only; crumb pops existing ancestor',
       (tester) async {
     final requests = <String>[];
-    final routes = <String?>[];
     final source = testSource((path, offset) async {
       final files = switch (path) {
         null => [browseItem('共享 A', '/share', directory: true)],

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dsm_helper/models/Syno/FileStation/FileStationList.dart';
+import 'package:dsm_helper/new_ui/files/file_browse_breadcrumb.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_controller.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_data_source.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_path.dart';
@@ -136,9 +137,72 @@ class _FileBrowsePageState extends State<FileBrowsePage> {
     }
   }
 
+  List<FileBrowseAncestor> get _breadcrumbTrail {
+    final matches = widget.ancestors.where((a) => a.path == widget.path);
+    final label = widget.path == null
+        ? '共享文件夹'
+        : (matches.isEmpty ? widget.path! : matches.last.label);
+    return buildBrowseAncestors(
+      visited: widget.ancestors,
+      current: FileBrowseAncestor(label: label, path: widget.path),
+    );
+  }
+
+  void _navigateToAncestor(FileBrowseAncestor ancestor) {
+    final trail = _breadcrumbTrail;
+    // Targets come only from the verified visited route chain.
+    if (ancestor.path == widget.path ||
+        !trail.take(trail.length - 1).any((a) => a.path == ancestor.path)) {
+      return;
+    }
+    final navigator = Navigator.of(context);
+    final target = ancestor.path;
+    if (target == null) {
+      navigator.popUntil(
+        (route) => route.isFirst || route.settings.name == 't7a-file-root',
+      );
+    } else {
+      navigator.popUntil(
+        (route) =>
+            route.settings.name == 't7a-folder:$target' || route.isFirst,
+      );
+    }
+  }
+
   void _openFolder(FileItem item) {
-    // Directory routes and verified breadcrumb stack are added in B3.3.
-    // A file cannot be opened or previewed in Task 7A.
+    final path = item.path;
+    // Only DSM-returned nonempty folder paths may produce a child route.
+    if (item.isdir != true || path == null || path.isEmpty ||
+        path == widget.path) {
+      return;
+    }
+    final trail = _breadcrumbTrail;
+    // A returned folder already in the stack is a jump, not a new route.
+    for (final ancestor in trail.take(trail.length - 1)) {
+      if (ancestor.path == path) {
+        _navigateToAncestor(ancestor);
+        return;
+      }
+    }
+    _controller.onLeaveDirectory();
+    final current = FileBrowseAncestor(
+      label: item.name?.isNotEmpty == true ? item.name! : path,
+      path: path,
+    );
+    unawaited(Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        settings: RouteSettings(name: 't7a-folder:$path'),
+        builder: (_) => FileBrowsePage(
+          contextId: widget.contextId,
+          onOpenNotifications: widget.onOpenNotifications,
+          connectionStatusText: widget.connectionStatusText,
+          dataSource: widget.dataSource,
+          path: path,
+          ancestors: <FileBrowseAncestor>[...trail, current],
+          onReauthNeeded: widget.onReauthNeeded,
+        ),
+      ),
+    ));
   }
 
   void _retry() {
@@ -266,11 +330,12 @@ class _FileBrowsePageState extends State<FileBrowsePage> {
           body: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 8, 4),
+                padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                 child: Row(children: [
-                  Expanded(child: Text(widget.path ?? '共享文件夹',
-                    maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall)),
+                  Expanded(child: FileBrowseBreadcrumb(
+                    ancestors: _breadcrumbTrail,
+                    onNavigate: _navigateToAncestor,
+                  )),
                   IconButton(
                     key: const Key('file-browse-view-toggle'),
                     tooltip: _viewPreferences.view == ListType.list
