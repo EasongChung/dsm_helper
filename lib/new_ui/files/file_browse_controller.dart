@@ -131,6 +131,10 @@ class FileBrowseController extends ChangeNotifier {
   bool _isActive(int generation) => !_disposed && generation == _generation;
 
   void _accept(FileBrowsePage page, FileBrowseRequest request) {
+    if (page.items.length > request.limit) {
+      _fail(const FileBrowseDataException('File Station page exceeds requested limit'));
+      return;
+    }
     final previous = _working;
     final nextOffset = request.offset + page.items.length;
     final total = page.total ?? previous.total;
@@ -139,7 +143,7 @@ class FileBrowseController extends ChangeNotifier {
             page.total != null && page.total != previous.total) ||
         (total != null && (total < nextOffset ||
             total < previous.items.length)) ||
-        (page.items.isEmpty && (total == null || nextOffset < total))) {
+        (page.items.isEmpty && total != null && nextOffset < total)) {
       _fail(const FileBrowseDataException('Inconsistent File Station page total'));
       return;
     }
@@ -167,13 +171,24 @@ class FileBrowseController extends ChangeNotifier {
       return;
     }
 
-    final isComplete = (total != null && nextOffset >= total) || !full;
+    // A known total cannot be proven complete by a short/duplicated page.
+    // An unknown total, including a final empty page, can end on a short page.
+    final inconsistentCompletion = total != null &&
+        ((!full && nextOffset < total) ||
+            (nextOffset >= total && merged.length < total));
+    final isComplete = !inconsistentCompletion &&
+        ((total != null && nextOffset >= total) || !full);
     _working = FileBrowseState(
       items: merged,
       nextOffset: nextOffset,
       isComplete: isComplete,
       total: total,
     );
+    if (inconsistentCompletion) {
+      _fail(const FileBrowseDataException('Incomplete File Station page'),
+        incomplete: true);
+      return;
+    }
     _error = null;
     if (isComplete) {
       _completed = _working;
@@ -187,7 +202,7 @@ class FileBrowseController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _fail(Object exception) {
+  void _fail(Object exception, {bool incomplete = false}) {
     _error = exception;
     if (exception is DsmException && exception.code == 119) {
       _phase = FileBrowsePhase.reauthNeeded;
@@ -197,7 +212,7 @@ class FileBrowseController extends ChangeNotifier {
       }
     } else if (_showCompleted) {
       _phase = FileBrowsePhase.stale;
-    } else if (_working.items.isNotEmpty) {
+    } else if (incomplete || _working.items.isNotEmpty) {
       _phase = FileBrowsePhase.partial;
     } else if (exception is DioException) {
       _phase = FileBrowsePhase.offline;
