@@ -475,12 +475,12 @@ The strict dependency is B1→B2→B3→B4→B5. Every Batch must carry a remote
 
 ## Plan Self-Review / Coverage
 
-- **Data:** `DATA-01/02/04` → B1; `DATA-03` → B1 wire + B2 pagination; `DATA-05/06` → B2; downstream UI/relationship proof B3/B5.
-- **Navigation:** `PATH-01` → B2 verified ancestors + B3 widget routing; `PATH-02` → B3 route/Back + B4 selection Back + B5 shell.
-- **View/preferences:** `VIEW-01/02` → B3, repeated selected-state and dark/light tests B4/B5.
-- **Selection:** `SEL-01/02/03/04` → B4, relationship regression B5.
-- **State:** `STATE-01` → B1 invalid envelope, B2 typed phases and callback, B3 presentation, B5 A→B/network relationships.
-- **Shell/cutover:** `SHELL-01/02` and `CUTOVER-01` → B5 only, with legacy still default.
+- **Data:** `T7A-DATA-01`, `T7A-DATA-02`, `T7A-DATA-04` → B1; `T7A-DATA-03` → B1 page wire + B2 pagination; `T7A-DATA-05`, `T7A-DATA-06` → B2; downstream UI/relationship proof B3/B5.
+- **Navigation:** `T7A-PATH-01` → B2 verified ancestors + B3 widget routing; `T7A-PATH-02` → B3 route/Back + B4 selection Back + B5 shell.
+- **View/preferences:** `T7A-VIEW-01`, `T7A-VIEW-02` → B3, selected-state and dark/light tests B4/B5.
+- **Selection:** `T7A-SEL-01`, `T7A-SEL-02`, `T7A-SEL-03`, `T7A-SEL-04` → B4, relationship regression B5.
+- **State:** `T7A-STATE-01` → B1 invalid envelope, B2 typed phases and callback, B3 presentation, B5 A→B/network relationships.
+- **Shell/cutover:** `T7A-SHELL-01`, `T7A-SHELL-02`, `T7A-CUTOVER-01` → B5 only, with legacy still default.
 - **Review Focus:** five cases above have explicit owner tests at B1/B2/B3/B4/B5; none rely solely on real-device observation.
 - **No speculative dependency:** no new SDK, auth service, database migration, production tab replacement, upload/download/preview handler or background task polling.
 - **Known testing limitation:** GitHub Actions—not this plan's authoring session—must supply executable Flutter RED/GREEN/CI evidence if a local Flutter runtime is unavailable.
