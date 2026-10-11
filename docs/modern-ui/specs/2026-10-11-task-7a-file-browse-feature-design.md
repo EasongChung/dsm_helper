@@ -1,6 +1,6 @@
 # DSM Helper Modern UI — Task 7A File Station Browse Foundation Feature Design
 
-> Status: **Preflight draft — submitted for review; no Batch planning or implementation authorized**  
+> Status: **Preflight technically reviewed; feature boundary frozen for a later separately authorized Batch plan — no Batch plan or implementation started**  
 > Date: 2026-10-11  
 > Task: **7A — File Station: Browse Foundation**  
 > Work branch: `feature/t7a-file-browse`  
@@ -52,7 +52,7 @@ These observations are from inspected source in the audited integration commit. 
 
 Responsibility boundaries:
 - **Browse data adapter**: invokes existing `FileStationList.shareList/fileList` with active DSM session; maps success, typed failure and pagination; never owns credentials/HTTP stack.
-- **Context-scoped browse controller/state**: one logical current directory, last-valid pages, loading/stale/error metadata, current sort/view, selection set, request generation and path navigation intent.
+- **Directory-route-scoped browse controller/state**: each Files-tab directory route owns its own current directory, last-valid snapshot, paging, error/refresh metadata, selection and request generation. A child route uses the existing Files-tab Navigator; on forward navigation the previous route invalidates outstanding requests and clears selection, while its completed browse snapshot can be restored on Back. Account-switch remount clears all routes/controllers.
 - **Modern File Station browse UI**: Material 3 list/grid, row metadata, breadcrumb, refresh, selection interaction; no DSM request logic inside widgets.
 - **Existing Shell and legacy**: owns tab navigator, theme, global notification/action budget, account switch and complete feature fallback.
 
@@ -67,7 +67,7 @@ New units belong under `lib/new_ui/files/**` with focused tests under `test/new_
 4. Compact list as default, optional grid, existing sort choices and persistent display preferences.
 5. Enter/exit selection mode, stable full-path selection identity, toggle, select-all, refresh reconciliation, Back priority.
 6. Loading/empty/stale/offline/error/auth-invalid distinctions and stale-request suppression.
-7. Isolated Modern preview/test entry and its scoped device gate; **no production Files tab cutover**.
+7. Opt-in Modern browse preview/test entry reachable from the existing Files placeholder and its scoped device gate; **no production Files tab cutover**.
 
 ### 4.2 Out of scope
 - Task 7B: search; rename, delete, create-folder or other mutations; favorite/share management; copy/move; selection operation dispatch and risk confirmation.
@@ -79,23 +79,23 @@ New units belong under `lib/new_ui/files/**` with focused tests under `test/new_
 **File tap/long-press completeness:** in the final product, the Project Spec requires file tap to open and long-press to expose contextual operations. 7A does not pretend these operations are implemented. Its isolated test surface may browse/select file rows but must neither display dead operation buttons nor claim to replace the fully functional legacy page; the production Files entry stays legacy. The full behavior is a 7B/7C handoff and cutover dependency. Share-root rows are navigation-first; do not manufacture unsupported share-root destructive actions in 7A.
 
 ### 4.3 Cutover gate
-Do not change `DsmNewUiShell` Files destination from the known-good legacy placeholder/fallback to the incomplete Modern browser in 7A. If a reviewable preview route is needed for device verification, it must be a controlled, non-default test entry that does not degrade production behavior or create a second primary Files tab. Final production cutover is deferred to the Task 7C completion gate specified in the Master Plan, or to an explicit subsequent approved scope decision with complete legacy-operation handoffs.
+Do not change the existing Files destination into the incomplete Modern browser in 7A. For real-device verification, extend only the existing Files **placeholder** with an explicitly secondary, clearly labeled `试用新版文件浏览（测试）` action alongside its existing primary `打开现有功能` legacy handoff. That action pushes the Modern browser into the **existing Files tab Navigator** and returns to the same placeholder on Back; it is not a new bottom-navigation destination, a new nested primary Navigator or an automatic default entry. Any required shell/placeholder callback wiring must be minimal and must leave the original legacy route the normal complete-feature entry. Final production cutover remains deferred to the Task 7C completion gate specified in the Master Plan, or an explicitly approved equivalent complete handoff.
 
 ## 5. Directory and path semantics
 
 - Root is a distinct state represented by the existing `shareList` call; it is **not** a guessed DSM physical filesystem path. A returned shared folder’s exact `FileItem.path` becomes the child listing request path.
 - An ordinary folder’s exact `path` returned by DSM is the next request path. Folder names/indices/`real_path` are not navigation IDs.
 - Every displayed breadcrumb ancestor must map to an exact verified navigable ancestor, including returning to the root. If a `scheme://` remote mount path cannot be safely decomposed into a tested ancestor, do not fabricate clickable intermediate components; preserve full readable path and provide verified Back/root navigation.
-- Within a NAS context, entering a new directory clears directory-local selection by default (`G-FILE-01`); ordinary Back restores the actual previous directory. Returning to a directory does not resurrect stale selection from another directory.
+- Within a NAS context, pushing a child folder route clears the departing directory's selection by default (`G-FILE-01`) and invalidates its ongoing requests. Ordinary Back restores the **previous route's already valid browse snapshot**, without restoring its old selection. A breadcrumb ancestor jump pops back to the verified corresponding route; no duplicate route stack or guessed parent path is created.
 - Android Back priority: active popup/IME → selection mode → current nested directory route → current primary tab/root exit policy. Do not consume Back through an independent competing nested Navigator.
 - Primary tab switches preserve that tab’s in-memory nested directory/navigation state during ordinary app resume. Cold start returns to shell root, and account/NAS switch destroys prior NAS directory, file cache and selection (`G-NAV-02/03`).
 
 ## 6. Listing, pagination and sort semantics
 
-- Default page size inherits the existing model’s `limit=100`, but 7A must **not stop at the first page** when more records exist. Prefer adding optional `offset`/`limit` to existing `shareList/fileList` (default `0/100` for all legacy callers), with no change to DSM API/response parsing authority.
+- Default page size inherits the existing model’s `limit=100`, but 7A must **not stop at the first page** when more records exist. Prefer adding optional `offset`/`limit` to existing `shareList/fileList` (default `0/100` for all legacy callers), with no change to DSM API/response parsing authority. Load the first page promptly, then incrementally request subsequent pages on approaching the visible list end (with an explicit Retry/Load More affordance for failures); do **not** eagerly download an arbitrarily large NAS directory in one unbounded loop.
 - Request success means a structurally valid result; `files=[]` with completed, valid listing is genuinely empty, while missing/invalid data, transport failure or DSM error is an unavailable/failed result, never silently coerced to empty.
-- Aggregate distinct DSM item paths within one listing scope across pages; avoid duplicates from repeated/overlapping page responses without silently pretending a broken pagination result is complete.
-- Use server-reported `total` and `offset` when valid, or clearly bounded fallback based on page size when absent. Stop on a short terminal page; a non-advancing cursor, repeated page, invalid total or contradictory response is a recoverable **partial/incomplete listing failure** with already fetched valid rows retained and explicit Retry, not an infinite loop or a false complete count.
+- Aggregate distinct DSM item paths within one directory+sort+context generation across pages; avoid duplicates from repeated/overlapping responses without silently pretending a broken result is complete. A previously completed snapshot and an in-progress new listing are separate versions: keep the prior snapshot visible (marked refreshing/stale) until a valid new page can be shown, never interleave rows from different sorts or generations.
+- Use server-reported `total` and `offset` when valid; absent `total` may use page-length termination with progress and repeated-page guards. Stop when a consistent `total` is reached or a short terminal page proves the end; do not impose a silent maximum-file cap. Non-advancing offset, zero new unique items on a full repeated page, invalid/contradictory total, or non-progress is a recoverable **partial/incomplete listing failure**, never infinite looping or a false complete count. If an older fully valid snapshot exists, keep it visible as stale; otherwise show only accumulated valid partial rows with an explicit incomplete/Retry label.
 - A new directory, sort choice or DSM context invalidates previous in-flight page requests. Ignore late results/errors for inactive generations; do not append A/sort-old pages into B/sort-new.
 - Preserve server sort authority. Keep the supported legacy `SortByEnum` keys and direction semantics; **confirm actual request spelling/casing and supported fields** before final code. Do not invent client-side folder grouping or a second independent sorting algorithm. Sorting invalidates/reloads pagination for the same path while preserving selection by path when entries remain.
 - Use existing `SpUtil` keys `file_list_type` (list/grid), `file_sort_by` and `file_sort_direction`. Invalid saved values resolve to existing enum defaults without erasing unrelated preferences. Preference write failures must not corrupt active DSM/session state.
@@ -108,7 +108,7 @@ Do not change `DsmNewUiShell` Files destination from the known-good legacy place
 - Entrance gestures must respect Android system Back and not hijack breadcrumb horizontal scrolling. Implement/test both list and grid target hit areas. Normal-mode long-press action behavior stays with later Task 7B; do not silently repurpose it into a contradictory operation.
 - Selection header shows explicit exit, count and select-all. No permanent checkbox gutter or layout jump; selection is full-row/tile restrained tonal emphasis.
 - Switch list↔grid or change sort: selected paths remain selected across reordered/recreated `FileItem` objects. When a **fully valid fresh listing** confirms a selected path no longer exists, remove that path. While refresh is pending, failed, or listing is partial/incomplete, preserve prior selection and label data stale; do not infer deletion from an incomplete set.
-- Select-all means all **loaded items in the current directory**, not an unbounded promise about all unloaded DSM pages. If pagination is still running, either complete loading before enabling global select-all or explicitly label it “已加载项全选”; never display an inaccurate all-files count. Selection changes remain local until a later task executes an explicit operation.
+- Select-all means all **currently loaded, selectable items in the current directory**, not all unseen DSM pages. During incomplete pagination, label it **“已加载项全选”** and select only the current loaded snapshot; subsequently fetched items are not automatically selected. At complete load, label it “全选” for the complete listing. The selected count always reflects the selected path set (even if some paths are not yet present in the newest partial sort page); never claim that unseen items were selected. Selection remains local until a later task executes an explicit operation.
 - Leaving selection via Back/exit clears it; changing directory or switching context clears it. No operations execute merely by selecting a file.
 - Rows with unusable/missing `path` cannot be selected/opened; preserve a readable row/error indication without crashing.
 
@@ -127,7 +127,7 @@ The feature tracks distinct states: **initial loading**, **valid loaded nonempty
 ## 9. Visual and navigation implementation guardrails
 
 - Modern compact **list-first**, grid optional; file icon/thumbnail only where an audited existing safe source exists. No per-file Card or permanent overflow and no permanent empty checkbox gutter.
-- List row: max two lines for primary name, one compact secondary line for valid size/time/type; gracefully omit missing fields, respect larger system fonts and 48dp targets. Do not reuse legacy `GlassScaffold`/`GlassAppBar` as Modern visual authority.
+- List row: max two lines for primary name, one compact secondary line for valid size/time/type; gracefully omit missing fields, respect larger system fonts and 48dp targets. Task 7A uses available local file-type icons; do not introduce remote SID-bearing thumbnail URLs or preview loading before Task 7C. Do not reuse legacy `GlassScaffold`/`GlassAppBar` as Modern visual authority.
 - Compact breadcrumb below App Bar; ellipsis may collapse older ancestors without losing reachable verified ancestors.
 - Global notification entry and connection status use established App Bar semantics; only one high-frequency page-specific direct action (search is not implemented in 7A, so do not add a dead Search button). Sort/grid/refresh belong in overflow/Bottom Sheet when not pull-to-refresh.
 - Normal data refresh and selection must not rebuild the entire shell, switch tabs or reset an unrelated tab. Light/Dark must use existing Modern tokens, maintain contrast and actual Android safe insets.
@@ -139,7 +139,7 @@ The feature tracks distinct states: **initial loading**, **valid loaded nonempty
 
 **Widget**: root and nested directory, breadcrumb ancestors, list/grid with long Unicode names and large font, light/dark, selection swipe/toggle/all/clear, no checkbox gutter, normal App Bar notification behavior, loading/stale/permission/empty differences.
 
-**Relationship**: File child route Back and selection Back precedence; tab switch/resume route preservation; context-switch A→B reset; startup offline; legacy fallback remains usable, full operations stay reachable through old Files route; existing external-share and transfer routing unmodified.
+**Relationship**: File child route Back and selection Back precedence; tab switch/resume route preservation; context-switch A→B reset; startup offline; explicit secondary test-preview entry available from Files placeholder while the original `打开现有功能` remains the default complete route; existing external-share and transfer routing unmodified.
 
 **CI**: targeted `flutter test`, targeted `flutter analyze lib/new_ui test/new_ui`, Android beta debug APK, artifact and stable package/signature checks on any code-bearing batch. Docs-only preflight follows `CI-DOCS-01` and requires no redundant APK build.
 
@@ -159,4 +159,4 @@ The feature tracks distinct states: **initial loading**, **valid loaded nonempty
 | `T7A-GAP-06` remote/special path parsing | Legacy supports `scheme://` paths; blindly splitting on slash is unsafe | Preserve exact DSM path; expose only verified navigable ancestors, fallback Back/root. | **Must test for cases 7A claims to support**; unsupported optional remote mount family deferred. |
 | `T7A-GAP-07` sort casing/DSM capability | Legacy sends uppercase direction enum; model default lower-case | Verify against existing request patterns and, if needed, real DSM before freezing code spelling. No hard-coded unverified equivalence. | **Code-execution audit gate**, not a product ambiguity requiring new architecture. |
 
-**Preflight review gate:** this document and the companion Task 7A contract matrix are committed as a proposal. No implementation and **no Batch Execution Plan** are authorized by the existence of these files. Human review/approval freezes the feature scope; only then may a separate planning request define Batch boundaries.
+**Preflight review outcome (2026-10-11):** Source-based technical and cross-contract review completed; feature scope and proposed boundary are frozen **for future planning only** under the user's instruction to continue the approved preflight process. This records delegated continuation, not a claim that the user individually inspected every clause or that device testing was performed. The user's earlier **“先不拆batch”** instruction remains binding: no Batch Execution Plan, Task 7A implementation, APK build or integration merge is authorized by this preflight review. A later **explicit** request is required to begin Batch planning.
