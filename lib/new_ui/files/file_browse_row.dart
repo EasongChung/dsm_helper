@@ -50,7 +50,7 @@ class FileBrowseRow extends StatelessWidget {
         onTap: onTap,
         splashColor: scheme.secondaryContainer,
         overlayColor: selected
-            ? MaterialStatePropertyAll<Color?>(scheme.secondaryContainer)
+            ? WidgetStatePropertyAll<Color?>(scheme.secondaryContainer)
             : null,
         borderRadius: BorderRadius.circular(10),
         child: Padding(
