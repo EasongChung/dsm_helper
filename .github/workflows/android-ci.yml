@@ -1,4 +1,4 @@
-name: Modern UI Android CI
+name: Task 7A Beta Release Performance Trial
 
 on:
   push:
@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   android:
-    name: Test and build development APK
+    name: Test and build beta Release trial APK
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -95,8 +95,8 @@ jobs:
             flutter analyze "${targets[@]}"
           fi
 
-      - name: Build beta debug APK
-        run: flutter build apk --debug --flavor beta
+      - name: Build beta Release trial APK
+        run: flutter build apk --release --flavor beta
 
       - name: Verify APK install identity
         shell: bash
@@ -105,7 +105,7 @@ jobs:
           EXPECTED_CERT_SHA256: 0B:8E:6E:07:65:CF:BA:89:E1:56:F3:03:7B:66:C9:E9:38:2D:91:F7:88:E5:E9:BE:50:51:6D:F0:23:13:D9:A2
         run: |
           set -euo pipefail
-          APK=build/app/outputs/flutter-apk/app-beta-debug.apk
+          APK=build/app/outputs/flutter-apk/app-beta-release.apk
           BUILD_TOOLS_DIR="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           AAPT="$BUILD_TOOLS_DIR/aapt"
           APKSIGNER="$BUILD_TOOLS_DIR/apksigner"
@@ -127,7 +127,7 @@ jobs:
       - name: Upload development APK
         uses: actions/upload-artifact@v4
         with:
-          name: dsm-helper-modern-ui-android-debug
-          path: build/app/outputs/flutter-apk/app-beta-debug.apk
+          name: dsm-helper-task7a-beta-release-performance
+          path: build/app/outputs/flutter-apk/app-beta-release.apk
           if-no-files-found: error
           retention-days: 14
