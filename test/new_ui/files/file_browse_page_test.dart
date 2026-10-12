@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:dsm_helper/models/Syno/FileStation/FileStationList.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_data_source.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_page.dart';
+import 'package:dsm_helper/new_ui/files/file_browse_row.dart';
 import 'package:dsm_helper/new_ui/theme/new_ui_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -374,4 +375,41 @@ void main() {
     expect(find.byKey(const Key('file-browse-selection-count')), findsNothing);
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 30)));
+  testWidgets('selected grid tiles retain a visible tonal surface without a checkbox',
+      (tester) async {
+    await SpUtil.putString('file_list_type', 'grid');
+    final requests = <String>[];
+    final source = testSource((path, offset) async => FileStationList(
+      files: [
+        browseItem('Folder', '/share/folder', directory: true),
+        browseItem('Item.txt', '/share/item'),
+      ], offset: offset, total: 2,
+    ), requests);
+    final theme = NewUiTheme.dark();
+    await tester.pumpWidget(browser(source, path: '/share', theme: theme));
+    await tester.pump();
+    await tester.drag(find.text('Folder'), const Offset(160, 0));
+    await tester.pump();
+    expect(find.text('已选择 1 项'), findsOneWidget);
+    expect(requests, hasLength(1)); // Swiping a folder does not navigate.
+    expect(find.byType(Checkbox), findsNothing);
+    final selectedRow = find.ancestor(
+      of: find.text('Folder'),
+      matching: find.byType(FileBrowseRow),
+    );
+    final selectedSurface = find.descendant(
+      of: selectedRow, matching: find.byType(Material),
+    );
+    expect(selectedSurface, findsOneWidget,
+      reason: 'Persistent selected tile needs its own colored surface');
+    expect(tester.widget<Material>(selectedSurface).color,
+        theme.colorScheme.secondaryContainer);
+    await tester.tap(find.text('Folder'));
+    await tester.pump();
+    expect(find.text('已选择 0 项'), findsOneWidget);
+    expect(tester.widget<Material>(selectedSurface).color,
+        isNot(theme.colorScheme.secondaryContainer));
+    expect(tester.takeException(), isNull);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
 }
