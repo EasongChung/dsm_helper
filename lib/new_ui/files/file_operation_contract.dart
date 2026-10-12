@@ -59,6 +59,7 @@ class FileOperationSelection {
       for (final item in loadedItems) {
         final path = item.path;
         if (path == null || path.trim().isEmpty ||
+            path == '/' || path == folderPath ||
             !selectedPaths.contains(path) || !visited.add(path)) {
           continue;
         }
