@@ -8,6 +8,7 @@ import 'package:dsm_helper/new_ui/dashboard/overview_alerts.dart';
 import 'package:dsm_helper/new_ui/dashboard/overview_controller.dart';
 import 'package:dsm_helper/new_ui/dashboard/overview_data_source.dart';
 import 'package:dsm_helper/new_ui/dashboard/overview_page.dart';
+import 'package:dsm_helper/new_ui/files/file_browse_page.dart';
 import 'package:dsm_helper/new_ui/intents/external_intent_listener.dart';
 import 'package:dsm_helper/new_ui/intents/external_intent_router.dart';
 import 'package:dsm_helper/new_ui/intents/flutter_sharing_intent_source.dart';
@@ -283,6 +284,18 @@ class _DsmNewUiShellState extends State<DsmNewUiShell> {
                         selectedIcon: Icons.folder,
                         legacyBuilder: (_) => FilePage(key: _filePageKey),
                         onLegacyBack: _handleFileBack,
+                        browsePreviewBuilder: (
+                          tabContext, {
+                          required onOpenNotifications,
+                          required connectionStatusText,
+                        }) {
+                          return FileBrowsePage(
+                            contextId: widget.contextId ?? 'legacy-current-context',
+                            onOpenNotifications: onOpenNotifications,
+                            connectionStatusText: connectionStatusText,
+                            onReauthNeeded: widget.onReauthNeeded,
+                          );
+                        },
                       ),
                       NewUiAppDestination(
                         label: '应用',
