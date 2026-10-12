@@ -80,6 +80,28 @@ void main() {
       .eligibility(FileOperationAction.createFolder), FileOperationEligibility.denied);
   });
 
+  test('a share-root path or current folder cannot become its own mutation target', () {
+    final selected = snapshot(
+      [file('/share', folder: true), file('/')],
+      {'/share', '/'},
+      folder: '/share',
+    );
+    expect(selected.targets, isEmpty);
+    expect(selected.eligibility(FileOperationAction.delete),
+      FileOperationEligibility.denied);
+  });
+
+  test('explicit read-only directory ACL never authorizes rename or delete', () {
+    final selected = snapshot(
+      [file('/share/readonly', folder: true, write: false, delete: false)],
+      {'/share/readonly'},
+    );
+    expect(selected.eligibility(FileOperationAction.rename),
+      FileOperationEligibility.denied);
+    expect(selected.eligibility(FileOperationAction.delete),
+      FileOperationEligibility.denied);
+  });
+
   test('unverified virtual/scheme path is not authorized for mutations', () {
     final special = snapshot([file('scheme://host/share/file')],
       {'scheme://host/share/file'}, folder: 'scheme://host/share');
