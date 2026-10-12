@@ -153,7 +153,9 @@ void main() {
     await tester.pumpWidget(browser(source, path: '/share'));
     await tester.pump();
     expect(requests, ['/share:0:100:name:ASC']);
-    expect(find.byKey(const Key('file-browse-load-more')), findsWidgets);
+    expect(find.text('加载更多'), findsNothing);
+    expect(find.byKey(const Key('file-browse-load-more')), findsNothing);
+    expect(find.byType(FileBrowseRow).evaluate().length, lessThan(40));
     await tester.drag(find.byKey(const Key('file-browse-scroll')),
         const Offset(0, -6000));
     await tester.pump();
@@ -356,12 +358,17 @@ void main() {
     await tester.tap(find.byKey(const Key('file-browse-select-loaded')));
     await tester.pump();
     expect(find.text('已选择 100 项'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('file-browse-load-more')));
+    expect(find.text('加载更多'), findsNothing);
+    await tester.drag(find.byKey(const Key('file-browse-scroll')),
+        const Offset(0, -6000));
+    await tester.pump();
     await tester.pump();
     expect(requests.map((r) => r.split(':')[1]).toList(), [ '0', '100' ]);
     expect(find.text('已选择 100 项'), findsOneWidget);
     expect(find.text('已加载项全选'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('file-browse-load-more')));
+    await tester.drag(find.byKey(const Key('file-browse-scroll')),
+        const Offset(0, -6000));
+    await tester.pump();
     await tester.pump();
     expect(requests.map((r) => r.split(':')[1]).toList(),
         ['0', '100', '200']);
@@ -426,7 +433,7 @@ void main() {
     await tester.pumpWidget(browser(source));
     await tester.pump();
     await tester.tap(find.text('文件夹'));
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.text('立即显示.txt'), findsOneWidget);
     final route = ModalRoute.of(tester.element(find.text('立即显示.txt')))!;
     expect(route, isA<PageRouteBuilder<void>>());
