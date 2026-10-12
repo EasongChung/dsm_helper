@@ -7,6 +7,7 @@ import 'package:dsm_helper/new_ui/files/file_browse_data_source.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_path.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_preferences.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_row.dart';
+import 'package:dsm_helper/new_ui/files/file_browse_selection_bar.dart';
 import 'package:dsm_helper/pages/file/enums/list_type_enums.dart';
 import 'package:dsm_helper/pages/file/enums/sort_enums.dart';
 import 'package:flutter/material.dart';
@@ -244,6 +245,18 @@ class _FileBrowsePageState extends State<FileBrowsePage> {
         item: rows[index],
         grid: _viewPreferences.view == ListType.grid,
         onOpenFolder: _openFolder,
+        selectionMode: _controller.isSelectionMode,
+        selected: rows[index].path != null &&
+            _controller.selectedPaths.contains(rows[index].path),
+        selectable: widget.path != null,
+        onSelect: (item) {
+          final path = item.path;
+          if (path != null) _controller.selectPath(path);
+        },
+        onToggle: (item) {
+          final path = item.path;
+          if (path != null) _controller.togglePath(path);
+        },
       );
     }
     if (_viewPreferences.view == ListType.grid) {
@@ -292,8 +305,22 @@ class _FileBrowsePageState extends State<FileBrowsePage> {
       builder: (context, _) {
         final phase = _controller.phase;
         final hasError = _controller.error != null;
-        return Scaffold(
-          appBar: AppBar(
+        return PopScope(
+          canPop: !_controller.isSelectionMode,
+          onPopInvoked: (didPop) {
+            if (!didPop && _controller.isSelectionMode) {
+              _controller.clearSelection();
+            }
+          },
+          child: Scaffold(
+          appBar: _controller.isSelectionMode
+              ? FileBrowseSelectionBar(
+                  selectedCount: _controller.selectedPaths.length,
+                  isComplete: _controller.isComplete,
+                  onExit: _controller.clearSelection,
+                  onSelectLoaded: _controller.selectLoaded,
+                )
+              : AppBar(
             title: Row(children: [
               const Flexible(child: Text('文件', maxLines: 1,
                   overflow: TextOverflow.ellipsis)),
@@ -374,6 +401,7 @@ class _FileBrowsePageState extends State<FileBrowsePage> {
                 ),
             ],
           ),
+        ),
         );
       },
     );
