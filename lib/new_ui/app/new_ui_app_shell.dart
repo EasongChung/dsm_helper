@@ -17,6 +17,7 @@ class NewUiAppDestination {
     required this.selectedIcon,
     required this.legacyBuilder,
     this.modernBuilder,
+    this.browsePreviewBuilder,
     this.onLegacyBack,
   });
 
@@ -39,6 +40,7 @@ class NewUiAppDestination {
   final IconData selectedIcon;
   final WidgetBuilder legacyBuilder;
   final NewUiModernRootBuilder? modernBuilder;
+  final NewUiModernRootBuilder? browsePreviewBuilder;
   final bool Function()? onLegacyBack;
 }
 
@@ -100,8 +102,23 @@ class NewUiAppShell extends StatelessWidget {
               );
             }
 
+            final browsePreviewBuilder = destination.browsePreviewBuilder;
             return NewUiPrimaryPage(
               title: destination.label,
+              onOpenBrowsePreview: browsePreviewBuilder == null
+                  ? null
+                  : () {
+                      Navigator.of(tabContext).push<void>(
+                        MaterialPageRoute<void>(
+                          settings: const RouteSettings(name: 't7a-file-root'),
+                          builder: (previewContext) => browsePreviewBuilder(
+                            previewContext,
+                            onOpenNotifications: openNotifications,
+                            connectionStatusText: connectionStatusText,
+                          ),
+                        ),
+                      );
+                    },
               connectionStatusText: connectionStatusText,
               onOpenAccountManagement:
                   destination.label == '我的' ? onOpenAccountManagement : null,

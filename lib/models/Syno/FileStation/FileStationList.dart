@@ -14,14 +14,14 @@ class FileStationList {
     this.total,
   });
 
-  static Future<FileStationList> shareList({List<String> additional = const ["perm", "time", "size"], String sortBy = "name", String sortDirection = "asc"}) async {
+  static Future<FileStationList> shareList({List<String> additional = const ["perm", "time", "size"], String sortBy = "name", String sortDirection = "asc", int offset = 0, int limit = 100}) async {
     DsmResponse res = await Api.dsm.entry(
       "SYNO.FileStation.List",
       '"list_share"',
       version: 2,
       data: {
-        "offset": 0,
-        "limit": 100,
+        "offset": offset,
+        "limit": limit,
         "sort_by": '"$sortBy"',
         "sort_direction": '"$sortDirection"',
         "additional": jsonEncode(additional),
@@ -31,14 +31,14 @@ class FileStationList {
     return res.data;
   }
 
-  static Future<FileStationList> fileList({required String path, List<String> additional = const ["real_path", "size", "owner", "time", "perm", "type", "mount_point_type", "description", "indexed"], String sortBy = "name", String sortDirection = "asc"}) async {
+  static Future<FileStationList> fileList({required String path, List<String> additional = const ["real_path", "size", "owner", "time", "perm", "type", "mount_point_type", "description", "indexed"], String sortBy = "name", String sortDirection = "asc", int offset = 0, int limit = 100}) async {
     DsmResponse res = await Api.dsm.entry(
       "SYNO.FileStation.List",
       '"list"',
       version: 2,
       data: {
-        "offset": 0,
-        "limit": 100,
+        "offset": offset,
+        "limit": limit,
         "sort_by": '"$sortBy"',
         "sort_direction": '"$sortDirection"',
         "folder_path": path,

@@ -7,6 +7,7 @@ class NewUiPrimaryPage extends StatelessWidget {
     required this.onOpenNotifications,
     required this.onOpenLegacyFeature,
     this.legacyFeatureLabel = '打开现有功能',
+    this.onOpenBrowsePreview,
     this.connectionStatusText,
     this.onOpenAccountManagement,
     this.onLogout,
@@ -16,6 +17,7 @@ class NewUiPrimaryPage extends StatelessWidget {
   final VoidCallback onOpenNotifications;
   final VoidCallback onOpenLegacyFeature;
   final String legacyFeatureLabel;
+  final VoidCallback? onOpenBrowsePreview;
   final String? connectionStatusText;
   final VoidCallback? onOpenAccountManagement;
   final VoidCallback? onLogout;
@@ -87,6 +89,15 @@ class NewUiPrimaryPage extends StatelessWidget {
             icon: const Icon(Icons.open_in_new),
             label: Text(legacyFeatureLabel),
           ),
+          if (onOpenBrowsePreview != null) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              key: const Key('file-browse-preview'),
+              onPressed: onOpenBrowsePreview,
+              icon: const Icon(Icons.folder_open_outlined),
+              label: const Text('试用新版文件浏览（测试）'),
+            ),
+          ],
         ],
       ),
     );
