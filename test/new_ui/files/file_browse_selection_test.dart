@@ -157,4 +157,80 @@ void main() {
     a.dispose();
     b.dispose();
   });
+
+  test('250 selectable items plus null path select only loaded exact paths',
+      () async {
+    final requests = <int>[];
+    final source = selectionSource((path, offset, sort) async {
+      requests.add(offset);
+      final count = offset == 200 ? 51 : 100;
+      final entries = List<FileItem>.generate(count, (i) {
+        final index = offset + i;
+        return file('file-$index', index == 250 ? null : '/share/$index');
+      });
+      return FileStationList(files: entries, offset: offset, total: 251);
+    });
+    final browse = FileBrowseController(
+      contextId: 'NAS-A/user', path: '/share', dataSource: source);
+    await browse.loadInitial();
+    expect(browse.isComplete, isFalse);
+    expect(browse.visibleItems, hasLength(100));
+    browse.selectLoaded();
+    expect(browse.isSelectionMode, isTrue);
+    expect(browse.selectedPaths, hasLength(100));
+    await browse.loadNext();
+    expect(browse.visibleItems, hasLength(200));
+    expect(browse.selectedPaths, hasLength(100),
+        reason: 'Unseen second-page paths must not be auto-selected');
+    await browse.loadNext();
+    expect(browse.isComplete, isTrue);
+    expect(browse.visibleItems, hasLength(251));
+    expect(browse.selectedPaths, hasLength(100));
+    browse.selectLoaded();
+    expect(browse.selectedPaths, hasLength(250));
+    expect(browse.selectedPaths.contains('/share/249'), isTrue);
+    expect(browse.selectedPaths.contains(''), isFalse);
+    expect(requests, <int>[0, 100, 200]);
+    browse.clearSelection();
+    expect(browse.selectedPaths, isEmpty);
+    expect(browse.isSelectionMode, isFalse);
+    browse.dispose();
+  });
+
+  test('failed second sort page preserves selected paths from valid listing',
+      () async {
+    final requests = <String>[];
+    final source = selectionSource((path, offset, sort) async {
+      requests.add('$sort:$offset');
+      if (sort == 'size' && offset == 100) {
+        throw StateError('sort continuation failed');
+      }
+      final count = offset == 200 ? 50 : 100;
+      return FileStationList(
+        files: List<FileItem>.generate(count, (i) =>
+            file('file-${offset + i}', '/share/${offset + i}')),
+        offset: offset,
+        total: 250,
+      );
+    });
+    final browse = FileBrowseController(
+      contextId: 'NAS-A/user', path: '/share', dataSource: source);
+    await browse.loadInitial();
+    await browse.loadNext();
+    await browse.loadNext();
+    expect(browse.isComplete, isTrue);
+    browse.selectPath('/share/210');
+    browse.selectLoaded();
+    expect(browse.selectedPaths, hasLength(250));
+    await browse.changeSort(SortByEnum.size, SortDirectionEnum.DESC);
+    expect(browse.isComplete, isFalse);
+    expect(browse.selectedPaths, hasLength(250));
+    await browse.loadNext();
+    expect(browse.phase, FileBrowsePhase.stale);
+    expect(browse.selectedPaths, hasLength(250));
+    expect(browse.visibleItems, hasLength(250));
+    expect(requests, ['name:0', 'name:100', 'name:200',
+      'size:0', 'size:100']);
+    browse.dispose();
+  });
 }

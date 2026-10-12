@@ -336,4 +336,42 @@ void main() {
     expect(find.byKey(const Key('file-browse-selection-count')), findsNothing);
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('paged select-loaded header counts 100 then 250 without auto selecting',
+      (tester) async {
+    await SpUtil.putString('file_list_type', 'list');
+    final requests = <String>[];
+    final source = testSource((path, offset) async => FileStationList(
+      files: List<FileItem>.generate(offset == 200 ? 50 : 100, (i) =>
+        browseItem('item-${offset + i}', '/share/${offset + i}')),
+      offset: offset, total: 250,
+    ), requests);
+    await tester.pumpWidget(browser(source, path: '/share'));
+    await tester.pump();
+    await tester.drag(find.text('item-0'), const Offset(180, 0));
+    await tester.pump();
+    expect(find.text('已加载项全选'), findsOneWidget);
+    expect(find.text('已选择 1 项'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('file-browse-select-loaded')));
+    await tester.pump();
+    expect(find.text('已选择 100 项'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('file-browse-load-more')));
+    await tester.pump();
+    expect(requests.map((r) => r.split(':')[1]).toList(), [ '0', '100' ]);
+    expect(find.text('已选择 100 项'), findsOneWidget);
+    expect(find.text('已加载项全选'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('file-browse-load-more')));
+    await tester.pump();
+    expect(requests.map((r) => r.split(':')[1]).toList(),
+        ['0', '100', '200']);
+    expect(find.text('已选择 100 项'), findsOneWidget);
+    expect(find.text('全选'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('file-browse-select-loaded')));
+    await tester.pump();
+    expect(find.text('已选择 250 项'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('file-browse-selection-exit')));
+    await tester.pump();
+    expect(find.byKey(const Key('file-browse-selection-count')), findsNothing);
+    expect(tester.takeException(), isNull);
+  }, timeout: const Timeout(Duration(seconds: 30)));
 }
