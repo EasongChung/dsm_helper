@@ -45,6 +45,8 @@ class FileBrowseController extends ChangeNotifier {
   int _generation = 0;
   bool _disposed = false;
   bool _reauthSignalled = false;
+  final Set<String> _selectedPaths = <String>{};
+  bool _selectionMode = false;
 
   FileBrowsePhase get phase => _phase;
   String get contextId => _contextId;
@@ -56,6 +58,49 @@ class FileBrowseController extends ChangeNotifier {
       (_showCompleted ? _completed : null)?.total ?? _working.total;
   Object? get error => _error;
   bool get isComplete => _working.isComplete;
+  bool get isSelectionMode => _selectionMode;
+  Set<String> get selectedPaths => Set<String>.unmodifiable(_selectedPaths);
+
+  /// Selection belongs only to this route's loaded, exact DSM paths.
+  bool _canSelect(String path) => !_disposed && _path != null &&
+      path.isNotEmpty && visibleItems.any((item) => item.path == path);
+
+  void selectPath(String path) {
+    if (!_canSelect(path)) return;
+    if (_selectedPaths.add(path) || !_selectionMode) {
+      _selectionMode = true;
+      notifyListeners();
+    }
+  }
+
+  void togglePath(String path) {
+    if (!_canSelect(path)) return;
+    _selectionMode = true;
+    if (!_selectedPaths.remove(path)) _selectedPaths.add(path);
+    notifyListeners();
+  }
+
+  /// Select only currently visible/loaded entries, never unseen pages.
+  void selectLoaded() {
+    if (_disposed || _path == null) return;
+    final available = visibleItems
+        .map((item) => item.path)
+        .whereType<String>()
+        .where((path) => path.isNotEmpty);
+    final previousCount = _selectedPaths.length;
+    _selectedPaths.addAll(available);
+    if (_selectedPaths.length != previousCount || !_selectionMode) {
+      _selectionMode = true;
+      notifyListeners();
+    }
+  }
+
+  void clearSelection() {
+    if (_disposed || (!_selectionMode && _selectedPaths.isEmpty)) return;
+    _selectionMode = false;
+    _selectedPaths.clear();
+    notifyListeners();
+  }
 
   Future<void> loadInitial() {
     if (_disposed) return Future<void>.value();
@@ -192,6 +237,11 @@ class FileBrowseController extends ChangeNotifier {
     _error = null;
     if (isComplete) {
       _completed = _working;
+      // Only a fully validated replacement is evidence of remote deletion.
+      final loadedPaths = _working.items
+          .map((item) => item.path)
+          .whereType<String>().toSet();
+      _selectedPaths.removeWhere((path) => !loadedPaths.contains(path));
       _showCompleted = false;
       _phase = FileBrowsePhase.valid;
     } else {
@@ -225,6 +275,8 @@ class FileBrowseController extends ChangeNotifier {
   /// Invalidate requests when pushing a child, preserving a completed parent.
   void onLeaveDirectory() {
     if (_disposed) return;
+    _selectionMode = false;
+    _selectedPaths.clear();
     _generation++;
     _pending = null;
     if (_completed != null) {
