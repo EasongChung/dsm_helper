@@ -47,13 +47,13 @@ FileBrowseDataSource _source(List<String> requests) => FileBrowseDataSource(
 
 List<NewUiAppDestination> _destinations(FileBrowseDataSource source) => [
       NewUiAppDestination.test(label: '概览', legacyBuilder: (_) => _legacy('overview')),
-      NewUiAppDestination(
-        label: '文件',
-        icon: Icons.folder_outlined,
-        selectedIcon: Icons.folder,
-        legacyBuilder: (_) => _legacy('files'),
-        browsePreviewBuilder: (
-          _, {
+      Function.apply(NewUiAppDestination.new, const [], {
+        #label: '文件',
+        #icon: Icons.folder_outlined,
+        #selectedIcon: Icons.folder,
+        #legacyBuilder: (BuildContext _) => _legacy('files'),
+        #browsePreviewBuilder: ((
+          BuildContext _, {
           required VoidCallback onOpenNotifications,
           required String? connectionStatusText,
         }) => FileBrowsePage(
@@ -61,8 +61,8 @@ List<NewUiAppDestination> _destinations(FileBrowseDataSource source) => [
           dataSource: source,
           onOpenNotifications: onOpenNotifications,
           connectionStatusText: connectionStatusText,
-        ),
-      ),
+        )) as NewUiModernRootBuilder,
+      }) as NewUiAppDestination,
       NewUiAppDestination.test(label: '应用', legacyBuilder: (_) => _legacy('apps')),
       NewUiAppDestination.test(label: '任务', legacyBuilder: (_) => _legacy('tasks')),
       NewUiAppDestination.test(label: '我的', legacyBuilder: (_) => _legacy('me')),

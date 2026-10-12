@@ -70,12 +70,12 @@ void main() {
     var preview = 0;
     await tester.pumpWidget(MaterialApp(
       theme: NewUiTheme.light(),
-      home: NewUiPrimaryPage(
-        title: '文件',
-        onOpenNotifications: () {},
-        onOpenLegacyFeature: () {},
-        onOpenBrowsePreview: () => preview++,
-      ),
+      home: Function.apply(NewUiPrimaryPage.new, const [], {
+        #title: '文件',
+        #onOpenNotifications: () {},
+        #onOpenLegacyFeature: () {},
+        #onOpenBrowsePreview: () => preview++,
+      }) as NewUiPrimaryPage,
     ));
 
     expect(find.byKey(const Key('open-legacy-feature')), findsOneWidget);
