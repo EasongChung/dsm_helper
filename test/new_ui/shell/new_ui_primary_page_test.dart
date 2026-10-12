@@ -65,4 +65,34 @@ void main() {
     expect(find.text('离线'), findsOneWidget);
     expect(find.byKey(const Key('new-ui-notifications')), findsOneWidget);
   });
+  testWidgets('optional preview follows existing fallback and does not affect other roots',
+      (tester) async {
+    var preview = 0;
+    await tester.pumpWidget(MaterialApp(
+      theme: NewUiTheme.light(),
+      home: NewUiPrimaryPage(
+        title: '文件',
+        onOpenNotifications: () {},
+        onOpenLegacyFeature: () {},
+        onOpenBrowsePreview: () => preview++,
+      ),
+    ));
+
+    expect(find.byKey(const Key('open-legacy-feature')), findsOneWidget);
+    expect(find.byKey(const Key('file-browse-preview')), findsOneWidget);
+    expect(find.text('试用新版文件浏览（测试）'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('file-browse-preview')));
+    expect(preview, 1);
+
+    await tester.pumpWidget(MaterialApp(
+      theme: NewUiTheme.light(),
+      home: NewUiPrimaryPage(
+        title: '任务',
+        onOpenNotifications: () {},
+        onOpenLegacyFeature: () {},
+      ),
+    ));
+    expect(find.byKey(const Key('file-browse-preview')), findsNothing);
+    expect(find.byKey(const Key('open-legacy-feature')), findsOneWidget);
+  }, timeout: const Timeout(Duration(seconds: 20)));
 }
