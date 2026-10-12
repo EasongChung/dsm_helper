@@ -246,4 +246,94 @@ void main() {
     expect(requests, hasLength(2));
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('horizontal swipe selects exact files; selection tap, view toggle and Back priority',
+      (tester) async {
+    await SpUtil.putString('file_list_type', 'list');
+    final requests = <String>[];
+    final source = testSource((path, offset) async => FileStationList(
+      files: [
+        browseItem('One.txt', '/share/one'),
+        browseItem('Two.txt', '/share/two'),
+        browseItem('Subfolder', '/share/sub', directory: true),
+      ], offset: offset, total: 3), requests);
+    await tester.pumpWidget(browser(source, path: '/share'));
+    await tester.pump();
+    await tester.drag(find.text('One.txt'), const Offset(180, 0));
+    await tester.pump();
+    expect(find.byKey(const Key('file-browse-selection-count')), findsOneWidget);
+    expect(find.text('已选择 1 项'), findsOneWidget);
+    expect(find.byKey(const Key('new-ui-notifications')), findsNothing);
+    expect(find.byType(Checkbox), findsNothing);
+    await tester.tap(find.text('Two.txt'));
+    await tester.pump();
+    expect(find.text('已选择 2 项'), findsOneWidget);
+    await tester.tap(find.text('One.txt'));
+    await tester.pump();
+    expect(find.text('已选择 1 项'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('file-browse-view-toggle')));
+    await tester.pumpAndSettle();
+    expect(find.byType(GridView), findsOneWidget);
+    expect(find.text('已选择 1 项'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('file-browse-selection-count')), findsNothing);
+    expect(find.byKey(const Key('new-ui-notifications')), findsOneWidget);
+    expect(find.text('Subfolder'), findsOneWidget);
+    expect(requests, hasLength(1));
+    expect(tester.takeException(), isNull);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('share-root swipe does not select; folder route selection Back stays inside child',
+      (tester) async {
+    await SpUtil.putString('file_list_type', 'list');
+    final requests = <String>[];
+    final source = testSource((path, offset) async {
+      final files = path == null
+          ? [browseItem('Share', '/share', directory: true)]
+          : [browseItem('Child.txt', '/share/child')];
+      return FileStationList(files: files, offset: offset, total: files.length);
+    }, requests);
+    await tester.pumpWidget(browser(source));
+    await tester.pump();
+    await tester.drag(find.text('Share'), const Offset(180, 0));
+    await tester.pump();
+    expect(find.byKey(const Key('file-browse-selection-count')), findsNothing);
+    await tester.tap(find.text('Share'));
+    await tester.pumpAndSettle();
+    await tester.drag(find.text('Child.txt'), const Offset(-180, 0));
+    await tester.pump();
+    expect(find.text('已选择 1 项'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Child.txt'), findsOneWidget);
+    expect(find.byKey(const Key('file-browse-selection-count')), findsNothing);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('Share'), findsOneWidget);
+    expect(requests, hasLength(2));
+    expect(tester.takeException(), isNull);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('dark scaled grid swipe selects without checkbox gutter',
+      (tester) async {
+    await SpUtil.putString('file_list_type', 'grid');
+    final requests = <String>[];
+    final source = testSource((path, offset) async => FileStationList(
+      files: [browseItem('中文名字很长的文件.txt', '/share/中文.txt')],
+      offset: offset, total: 1,
+    ), requests);
+    await tester.pumpWidget(browser(source, path: '/share',
+        theme: NewUiTheme.dark(), scale: 1.6));
+    await tester.pump();
+    expect(find.byType(GridView), findsOneWidget);
+    await tester.drag(find.text('中文名字很长的文件.txt'), const Offset(150, 0));
+    await tester.pump();
+    expect(find.text('已选择 1 项'), findsOneWidget);
+    expect(find.byType(Checkbox), findsNothing);
+    await tester.tap(find.byKey(const Key('file-browse-selection-exit')));
+    await tester.pump();
+    expect(find.byKey(const Key('file-browse-selection-count')), findsNothing);
+    expect(tester.takeException(), isNull);
+  }, timeout: const Timeout(Duration(seconds: 30)));
 }
