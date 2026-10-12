@@ -170,8 +170,8 @@ void main() {
     expect(Theme.of(tester.element(find.text('nested.txt'))).brightness,
         Brightness.dark);
     expect(find.text('已选择 1 项'), findsOneWidget);
-    await tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    await tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pump();
     expect(find.text('nested.txt'), findsOneWidget);
     expect(find.text('已选择 1 项'), findsOneWidget);
@@ -198,6 +198,7 @@ void main() {
     await SpUtil.putString('file_list_type', 'list');
     final account = ValueNotifier<String>('A');
     final pendingA = Completer<FileStationList>();
+    var aSlowStarted = false;
     addTearDown(account.dispose);
 
     FileBrowseDataSource sourceFor(String id) => FileBrowseDataSource(
@@ -217,7 +218,10 @@ void main() {
         required sortBy,
         required sortDirection,
       }) {
-        if (id == 'A' && path == '/share/slow') return pendingA.future;
+        if (id == 'A' && path == '/share/slow') {
+          aSlowStarted = true;
+          return pendingA.future;
+        }
         final items = <FileItem>[
           FileItem(name: 'file-$id', path: '/share/file-$id'),
           if (id == 'A')
@@ -273,6 +277,12 @@ void main() {
     await tester.drag(find.text('file-A'), const Offset(180, 0));
     await tester.pump();
     expect(find.text('已选择 1 项'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('file-browse-selection-exit')));
+    await tester.pump();
+    await tester.tap(find.text('slow-directory'));
+    await tester.pump();
+    expect(aSlowStarted, isTrue);
+    expect(pendingA.isCompleted, isFalse);
 
     account.value = 'B';
     await tester.pumpAndSettle();
