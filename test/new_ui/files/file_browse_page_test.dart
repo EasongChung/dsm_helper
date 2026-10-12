@@ -412,4 +412,57 @@ void main() {
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 30)));
 
+
+  testWidgets('folder entry and Back skip Android zoom and transition frames',
+      (tester) async {
+    await SpUtil.putString('file_list_type', 'list');
+    final requests = <String>[];
+    final source = testSource((path, offset) async {
+      final rows = path == null
+          ? <FileItem>[browseItem('文件夹', '/share', directory: true)]
+          : <FileItem>[browseItem('立即显示.txt', '/share/file')];
+      return FileStationList(files: rows, offset: offset, total: rows.length);
+    }, requests);
+    await tester.pumpWidget(browser(source));
+    await tester.pump();
+    await tester.tap(find.text('文件夹'));
+    await tester.pump();
+    expect(find.text('立即显示.txt'), findsOneWidget);
+    final route = ModalRoute.of(tester.element(find.text('立即显示.txt')))!;
+    expect(route, isA<PageRouteBuilder<void>>());
+    expect(route.transitionDuration, Duration.zero);
+    expect(route.reverseTransitionDuration, Duration.zero);
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(find.text('文件夹'), findsOneWidget);
+    expect(find.text('立即显示.txt'), findsNothing);
+    expect(requests, hasLength(2));
+    expect(tester.takeException(), isNull);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
+  testWidgets('file sort popup opens and closes without scale/fade animation',
+      (tester) async {
+    await SpUtil.putString('file_list_type', 'list');
+    final requests = <String>[];
+    final source = testSource((path, offset) async =>
+        FileStationList(
+          files: [browseItem('entry.txt', '/share/entry.txt')],
+          offset: offset, total: 1,
+        ), requests);
+    await tester.pumpWidget(browser(source, path: '/share'));
+    await tester.pump();
+    final button = tester.widget<PopupMenuButton<String>>(
+      find.byKey(const Key('file-browse-sort')),
+    );
+    expect(button.popUpAnimationStyle, same(AnimationStyle.noAnimation));
+    await tester.tap(find.byKey(const Key('file-browse-sort')));
+    await tester.pump();
+    expect(find.textContaining('排序方向：'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(find.textContaining('排序方向：'), findsNothing);
+    expect(find.text('entry.txt'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  }, timeout: const Timeout(Duration(seconds: 30)));
+
 }
