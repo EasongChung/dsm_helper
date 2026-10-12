@@ -191,9 +191,11 @@ class _FileBrowsePageState extends State<FileBrowsePage> {
       path: path,
     );
     unawaited(Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
+      PageRouteBuilder<void>(
         settings: RouteSettings(name: 't7a-folder:$path'),
-        builder: (_) => FileBrowsePage(
+        transitionDuration: Duration.zero,
+        reverseTransitionDuration: Duration.zero,
+        pageBuilder: (_, __, ___) => FileBrowsePage(
           contextId: widget.contextId,
           onOpenNotifications: widget.onOpenNotifications,
           connectionStatusText: widget.connectionStatusText,
@@ -217,6 +219,8 @@ class _FileBrowsePageState extends State<FileBrowsePage> {
 
   Widget _contents() {
     final rows = _controller.visibleItems;
+    // Copy selection once per rebuild, not once for every lazily built row.
+    final selectedPaths = _controller.selectedPaths;
     final phase = _controller.phase;
     if (phase == FileBrowsePhase.loading ||
         phase == FileBrowsePhase.initial) {
@@ -247,7 +251,7 @@ class _FileBrowsePageState extends State<FileBrowsePage> {
         onOpenFolder: _openFolder,
         selectionMode: _controller.isSelectionMode,
         selected: rows[index].path != null &&
-            _controller.selectedPaths.contains(rows[index].path),
+            selectedPaths.contains(rows[index].path),
         selectable: widget.path != null,
         onSelect: (item) {
           final path = item.path;
@@ -304,7 +308,6 @@ class _FileBrowsePageState extends State<FileBrowsePage> {
       animation: _controller,
       builder: (context, _) {
         final phase = _controller.phase;
-        final hasError = _controller.error != null;
         return PopScope(
           canPop: !_controller.isSelectionMode,
           onPopInvoked: (didPop) {
@@ -334,6 +337,7 @@ class _FileBrowsePageState extends State<FileBrowsePage> {
             actions: [
               PopupMenuButton<String>(
                 key: const Key('file-browse-sort'),
+                popUpAnimationStyle: AnimationStyle.noAnimation,
                 tooltip: '排序',
                 icon: const Icon(Icons.sort_outlined),
                 onSelected: (command) => unawaited(_changeSort(command)),
@@ -390,15 +394,6 @@ class _FileBrowsePageState extends State<FileBrowsePage> {
                   ]),
                 ),
               Expanded(child: _contents()),
-              if (_controller.hasMore && !hasError &&
-                  phase != FileBrowsePhase.loading &&
-                  phase != FileBrowsePhase.initial &&
-                  phase != FileBrowsePhase.refreshing)
-                TextButton(
-                  key: const Key('file-browse-load-more'),
-                  onPressed: _loadMore,
-                  child: const Text('加载更多'),
-                ),
             ],
           ),
         ),
