@@ -31,7 +31,7 @@ Inherited authorities: `docs/modern-ui/2026-10-06-dsm-helper-modern-ui-master-pl
 | Task 7A acceptance | `acceptance/2026-10-11-task-7a-batch-5-acceptance.md` | 7A B5 user-scoped PASS; no full-file-manager PASS, no device FPS proof, no default cutover. Avoid adding animations/eager loads that undo B5 corrective UX. |
 | Docs/CI | `.github/workflows/android-ci.yml` | Flutter 3.22.3, `flutter test`, `flutter analyze lib/new_ui test/new_ui`, beta Debug APK, fixed signing. `docs/**` / `**/*.md` pushes ignored: planning commits need no duplicate full CI. |
 
-The audited integration branch is `dc5a96f2…`; its Android CI #340 was still **in progress at preflight time**. The accepted B5 feature SHA has separate passing CI #337 (371 tests), while merge-HEAD CI completion must be rechecked before implementing B1. This review does not prove a real DSM write operation.
+The audited integration branch is `dc5a96f2…`; merge-HEAD Android CI **#340 completed successfully** on 2026-10-12. The accepted B5 feature SHA has separate passing CI #337 (371 tests). This review does not prove a real DSM write operation.
 
 ## 3. Selected architecture and interaction semantics
 
