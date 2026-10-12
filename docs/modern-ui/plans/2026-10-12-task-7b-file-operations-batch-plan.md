@@ -20,7 +20,7 @@ This plan was prepared after reading the **actual** integration HEAD, Task 7A B5
 - `Api.copyMoveTask` sends `SYNO.FileStation.CopyMove/start` v3 with `overwrite="true"`, `remove_src` depending on move/copy. This is **not safe to assume collision-free**. B5 must not enable writes without an explicit user-authorized conflict policy and expendable DSM test.
 - `Sharing.create` v3 supports ordinary links and a separate file-request mode; only the ordinary-link flow belongs to 7B. Legacy `DeleteFileDialog` starts Delete v2 task with confirmation.
 - `Task 7A B5` was user-scoped accepted; scroll/frame-rate comparison after #337 remains unmeasured, and real DSM File Station mutations are **not tested** merely because browse passed.
-- At this document's baseline review, `modern-ui` merge CI #340 was **in progress**, not PASS. Before B1 verify current merge HEAD and latest CI. Approved Task 7A B5 source SHA `255a01b600352bc8eecb0d3ca76fbf353707cfa3` has separate passing #337 evidence; do not transfer the latter to a different SHA.
+- At initial review, merge CI #340 was in progress; it subsequently **completed successfully** on `modern-ui@dc5a96f2a3006db75a0e7ebe9aa4a479b144f057`. Before B1 recheck current integration HEAD and latest CI. Approved Task 7A B5 source SHA `255a01b600352bc8eecb0d3ca76fbf353707cfa3` also has separate passing #337 evidence; do not transfer one SHA's result to another.
 
 ### Invariants common to every Batch
 
