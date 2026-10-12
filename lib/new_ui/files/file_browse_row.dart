@@ -46,33 +46,38 @@ class FileBrowseRow extends StatelessWidget {
     if (grid) {
       return _withSwipe(
         canSelect: canSelect,
-        child: InkWell(
-        onTap: onTap,
-        splashColor: scheme.secondaryContainer,
-        overlayColor: selected
-            ? WidgetStatePropertyAll<Color?>(scheme.secondaryContainer)
-            : null,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, size: 32, color: scheme.onSurfaceVariant),
-              const SizedBox(height: 6),
-              Text(label,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium),
-              if (metadata.isNotEmpty)
-                Text(metadata,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodySmall),
-            ],
+        child: Material(
+          color: selected ? scheme.secondaryContainer : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            onTap: onTap,
+            splashColor: scheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(10),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 32, color: scheme.onSurfaceVariant),
+                  const SizedBox(height: 6),
+                  Text(
+                    label,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  if (metadata.isNotEmpty)
+                    Text(
+                      metadata,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                ],
+              ),
+            ),
           ),
-        ),
         ),
       );
     }
