@@ -8,7 +8,7 @@ import 'package:dsm_helper/new_ui/files/file_browse_path.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_preferences.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_row.dart';
 import 'package:dsm_helper/new_ui/files/file_browse_selection_bar.dart';
-import 'package:dsm_helper/new_ui/files/file_search_data_source.dart';
+import 'package:dsm_helper/new_ui/files/file_search_data_source.dart' show FileSearchDataSource;
 import 'package:dsm_helper/new_ui/files/file_search_page.dart';
 import 'package:dsm_helper/pages/file/enums/list_type_enums.dart';
 import 'package:dsm_helper/pages/file/enums/sort_enums.dart';

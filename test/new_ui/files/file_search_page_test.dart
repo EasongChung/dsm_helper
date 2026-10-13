@@ -226,6 +226,9 @@ void main() {
     await tester.pump();
     expect(find.text('Recovered.txt'), findsOneWidget);
 
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+
     final emptySource = _FakeSearchSource(
       onStart: ({
         required folderPath,
@@ -333,7 +336,7 @@ void main() {
     expect(field.focusNode?.hasFocus, isTrue);
 
     await tester.binding.handlePopRoute();
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.byKey(const Key('file-search-query')), findsOneWidget);
     expect(field.focusNode?.hasFocus, isFalse);
 
