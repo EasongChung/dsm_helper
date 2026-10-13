@@ -44,9 +44,37 @@ class FileSearchDataSource {
     required this.entry,
   });
 
+  factory FileSearchDataSource.production({
+    required String contextId,
+    required bool Function() isContextCurrent,
+  }) {
+    final bound = Api.dsm;
+    final boundSid = bound.sid;
+    final boundHost = bound.baseUrl;
+
+    bool stillBound() =>
+        isContextCurrent() &&
+        identical(Api.dsm, bound) &&
+        bound.sid == boundSid &&
+        bound.baseUrl == boundHost;
+
+    return FileSearchDataSource(
+      contextId: contextId,
+      isContextCurrent: stillBound,
+      entry: (api, method, {required version, required data}) =>
+          bound.entry(api, method, version: version, data: data),
+    );
+  }
+
   final String contextId;
   final bool Function() isContextCurrent;
   final FileSearchEntry entry;
+
+  void _assertCurrent() {
+    if (!isContextCurrent()) {
+      throw const FileSearchDataException('Inactive DSM context');
+    }
+  }
 
   Future<FileSearchStart> startSearch({
     required String folderPath,
@@ -54,12 +82,11 @@ class FileSearchDataSource {
     bool recursive = true,
     bool searchContent = false,
   }) async {
-    if (!isContextCurrent()) {
-      throw const FileSearchDataException('Inactive DSM context');
-    }
+    _assertCurrent();
     if (folderPath.isEmpty || pattern.trim().isEmpty) {
       throw const FileSearchDataException('Invalid search request');
     }
+
     final res = await entry(
       'SYNO.FileStation.Search',
       '"start"',
@@ -72,11 +99,16 @@ class FileSearchDataSource {
         'search_type': '"simple"',
       },
     );
+
+    _assertCurrent();
     final data = res.data;
-    if (res.success != true || data is! Map || data['taskid'] is! String) {
+    final taskId = data is Map ? data['taskid'] : null;
+    if (res.success != true ||
+        taskId is! String ||
+        taskId.trim().isEmpty) {
       throw const FileSearchDataException('Missing search task id');
     }
-    return FileSearchStart(data['taskid'] as String);
+    return FileSearchStart(taskId);
   }
 
   Future<FileSearchPage> loadPage({
@@ -84,12 +116,11 @@ class FileSearchDataSource {
     required int offset,
     required int limit,
   }) async {
-    if (!isContextCurrent()) {
-      throw const FileSearchDataException('Inactive DSM context');
-    }
+    _assertCurrent();
     if (taskId.isEmpty || offset < 0 || limit <= 0) {
       throw const FileSearchDataException('Invalid search page request');
     }
+
     final res = await entry(
       'SYNO.FileStation.Search',
       '"list"',
@@ -109,11 +140,16 @@ class FileSearchDataSource {
         ]),
       },
     );
+
+    _assertCurrent();
     final data = res.data;
-    if (res.success != true || data is! Map || data['files'] is! List ||
+    if (res.success != true ||
+        data is! Map ||
+        data['files'] is! List ||
         data['finished'] is! bool) {
       throw const FileSearchDataException('Malformed search result');
     }
+
     try {
       return FileSearchPage(
         offset: data['offset'] is int ? data['offset'] as int : offset,

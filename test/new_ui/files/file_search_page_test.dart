@@ -85,8 +85,8 @@ void main() {
     (tester) async {
       String? folder;
       String? query;
-      bool? recursive;
-      bool? content;
+      bool? recursiveFlag;
+      bool? contentFlag;
       final source = _FakeSearchSource(
         onStart: ({
           required folderPath,
@@ -96,8 +96,8 @@ void main() {
         }) async {
           folder = folderPath;
           query = pattern;
-          recursive = recursive;
-          content = searchContent;
+          recursiveFlag = recursive;
+          contentFlag = searchContent;
           return const search_data.FileSearchStart('task-ui');
         },
         onPage: ({
@@ -130,8 +130,8 @@ void main() {
 
       expect(folder, '/share/music');
       expect(query, 'Miles Davis');
-      expect(recursive, isTrue);
-      expect(content, isTrue);
+      expect(recursiveFlag, isTrue);
+      expect(contentFlag, isTrue);
       expect(find.text('So What.flac'), findsOneWidget);
       expect(find.text('/share/music/So What.flac'), findsOneWidget);
       final tile = tester.widget<ListTile>(
