@@ -1,25 +1,25 @@
 import 'package:dio/dio.dart';
 import 'package:dsm_helper/models/Syno/FileStation/FileStationList.dart';
-import 'package:dsm_helper/new_ui/files/file_search_data_source.dart';
-import 'package:dsm_helper/new_ui/files/file_search_page.dart';
+import 'package:dsm_helper/new_ui/files/file_search_data_source.dart' as search_data;
+import 'package:dsm_helper/new_ui/files/file_search_page.dart' as search_ui;
 import 'package:dsm_helper/new_ui/theme/new_ui_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-typedef _StartHandler = Future<FileSearchStart> Function({
+typedef _StartHandler = Future<search_data.FileSearchStart> Function({
   required String folderPath,
   required String pattern,
   required bool recursive,
   required bool searchContent,
 });
 
-typedef _PageHandler = Future<FileSearchPage> Function({
+typedef _PageHandler = Future<search_data.FileSearchPage> Function({
   required String taskId,
   required int offset,
   required int limit,
 });
 
-class _FakeSearchSource extends FileSearchDataSource {
+class _FakeSearchSource extends search_data.FileSearchDataSource {
   _FakeSearchSource({
     required this.onStart,
     required this.onPage,
@@ -34,7 +34,7 @@ class _FakeSearchSource extends FileSearchDataSource {
   final _PageHandler onPage;
 
   @override
-  Future<FileSearchStart> startSearch({
+  Future<search_data.FileSearchStart> startSearch({
     required String folderPath,
     required String pattern,
     bool recursive = true,
@@ -47,7 +47,7 @@ class _FakeSearchSource extends FileSearchDataSource {
   );
 
   @override
-  Future<FileSearchPage> loadPage({
+  Future<search_data.FileSearchPage> loadPage({
     required String taskId,
     required int offset,
     required int limit,
@@ -57,10 +57,10 @@ class _FakeSearchSource extends FileSearchDataSource {
 FileItem resultItem(String name, String path) =>
     FileItem(name: name, path: path, isdir: false);
 
-FileSearchPage searchPage(
-  FileSearchDataSource source, {
+search_ui.FileSearchPage searchPage(
+  search_data.FileSearchDataSource source, {
   VoidCallback? onNotifications,
-}) => FileSearchPage(
+}) => search_ui.FileSearchPage(
   contextId: 'NAS-A/account',
   folderPath: '/share/music',
   dataSource: source,
@@ -68,7 +68,7 @@ FileSearchPage searchPage(
 );
 
 Widget app(
-  FileSearchDataSource source, {
+  search_data.FileSearchDataSource source, {
   ThemeData? theme,
   double scale = 1,
 }) => MaterialApp(
@@ -98,13 +98,13 @@ void main() {
           query = pattern;
           recursive = recursive;
           content = searchContent;
-          return const FileSearchStart('task-ui');
+          return const search_data.FileSearchStart('task-ui');
         },
         onPage: ({
           required taskId,
           required offset,
           required limit,
-        }) async => FileSearchPage(
+        }) async => search_data.FileSearchPage(
           offset: 0,
           items: <FileItem>[
             resultItem('So What.flac', '/share/music/So What.flac'),
@@ -156,13 +156,13 @@ void main() {
         required searchContent,
       }) async {
         starts++;
-        return const FileSearchStart('unused');
+        return const search_data.FileSearchStart('unused');
       },
       onPage: ({
         required taskId,
         required offset,
         required limit,
-      }) async => const FileSearchPage(
+      }) async => const search_data.FileSearchPage(
         offset: 0,
         items: <FileItem>[],
         finished: true,
@@ -198,13 +198,13 @@ void main() {
             type: DioExceptionType.connectionTimeout,
           );
         }
-        return const FileSearchStart('task-retry');
+        return const search_data.FileSearchStart('task-retry');
       },
       onPage: ({
         required taskId,
         required offset,
         required limit,
-      }) async => FileSearchPage(
+      }) async => search_data.FileSearchPage(
         offset: 0,
         items: <FileItem>[resultItem('Recovered.txt', '/share/music/Recovered.txt')],
         finished: true,
@@ -232,12 +232,12 @@ void main() {
         required pattern,
         required recursive,
         required searchContent,
-      }) async => const FileSearchStart('task-empty'),
+      }) async => const search_data.FileSearchStart('task-empty'),
       onPage: ({
         required taskId,
         required offset,
         required limit,
-      }) async => const FileSearchPage(
+      }) async => const search_data.FileSearchPage(
         offset: 0,
         items: <FileItem>[],
         finished: true,
@@ -263,12 +263,12 @@ void main() {
         required pattern,
         required recursive,
         required searchContent,
-      }) async => const FileSearchStart('task-incomplete'),
+      }) async => const search_data.FileSearchStart('task-incomplete'),
       onPage: ({
         required taskId,
         required offset,
         required limit,
-      }) async => FileSearchPage(
+      }) async => search_data.FileSearchPage(
         offset: 0,
         items: List<FileItem>.generate(
           101,
@@ -300,12 +300,12 @@ void main() {
         required pattern,
         required recursive,
         required searchContent,
-      }) async => const FileSearchStart('task-back'),
+      }) async => const search_data.FileSearchStart('task-back'),
       onPage: ({
         required taskId,
         required offset,
         required limit,
-      }) async => const FileSearchPage(
+      }) async => const search_data.FileSearchPage(
         offset: 0,
         items: <FileItem>[],
         finished: true,
@@ -352,12 +352,12 @@ void main() {
         required pattern,
         required recursive,
         required searchContent,
-      }) async => const FileSearchStart('task-dark'),
+      }) async => const search_data.FileSearchStart('task-dark'),
       onPage: ({
         required taskId,
         required offset,
         required limit,
-      }) async => FileSearchPage(
+      }) async => search_data.FileSearchPage(
         offset: 0,
         items: <FileItem>[
           resultItem(
