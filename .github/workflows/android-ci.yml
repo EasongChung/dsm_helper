@@ -30,7 +30,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -126,19 +126,6 @@ jobs:
           echo "Package ID: $PACKAGE_ID"
           test "$PACKAGE_ID" = "$EXPECTED_PACKAGE_ID"
 
-      - name: Scan APK for advertising SDKs
-        shell: bash
-        run: |
-          set -euo pipefail
-          APK=build/app/outputs/flutter-apk/app-beta-release.apk
-          if unzip -p "$APK" 'classes*.dex' 2>/dev/null | \
-             grep -a -E -i -c 'pangle|com/bytedance|TTAdSdk|com/qq/e/ads|com/kwad|admob' ; then
-            echo "::error::Advertising SDK signature detected in APK"
-            exit 1
-          else
-            echo "OK: no advertising SDK signature found in APK"
-          fi
-
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
@@ -147,4 +134,33 @@ jobs:
             build/app/outputs/flutter-apk/app-beta-release.apk
             build/app/outputs/flutter-apk/app-production-release.apk
           if-no-files-found: error
+          retention-days: 14
+
+      - name: Scan APK for advertising SDKs
+        shell: bash
+        run: |
+          set -uo pipefail
+          SCAN_STATUS=0
+          for APK in build/app/outputs/flutter-apk/app-beta-release.apk \
+                     build/app/outputs/flutter-apk/app-production-release.apk; do
+            [ -f "$APK" ] || continue
+            echo "::group::Scanning $APK"
+            python3 tool/apk_ad_scan.py "$APK" | tee "scan-$(basename "$APK").txt"
+            STATUS="${PIPESTATUS[0]}"
+            [ "$STATUS" -eq 0 ] || SCAN_STATUS=1
+            echo "::endgroup::"
+          done
+          if [ "$SCAN_STATUS" -ne 0 ]; then
+            echo "::error::Advertising SDK detected - build failed"
+            exit 1
+          fi
+          echo "::notice::All APKs are free of advertising SDKs."
+
+      - name: Upload ad-scan reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-ad-scan-reports
+          path: scan-*.txt
+          if-no-files-found: ignore
           retention-days: 14
