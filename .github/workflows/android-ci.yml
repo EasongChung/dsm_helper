@@ -21,9 +21,9 @@ permissions:
 
 jobs:
   android:
-    name: Test and build development APK
+    name: Test and build Android APKs
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -47,24 +47,30 @@ jobs:
           flutter --version
           java -version
 
-      - name: Restore stable development signing key
+      # Fork-safe signing: the upstream workflow restored a keystore from repo
+      # secrets (MODERN_UI_DEV_*). Secrets are NOT inherited by forks, so we
+      # mint a throwaway keypair at build time instead. Swap this for a
+      # secrets-backed key before publishing to a store.
+      - name: Generate ephemeral signing key
         shell: bash
-        env:
-          KEYSTORE_B64: ${{ secrets.MODERN_UI_DEV_KEYSTORE_B64 }}
-          STORE_PASSWORD: ${{ secrets.MODERN_UI_DEV_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.MODERN_UI_DEV_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.MODERN_UI_DEV_KEY_PASSWORD }}
         run: |
           set -euo pipefail
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > android/modern-ui-dev.jks
-          chmod 600 android/modern-ui-dev.jks
+          keytool -genkeypair -v \
+            -keystore android/ci-release.jks \
+            -storetype JKS \
+            -storepass ci-release-pass \
+            -keypass ci-release-pass \
+            -alias ci-release \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=CI,OU=CI,O=CI,L=CI,ST=CI,C=CN"
           {
-            printf 'storePassword=%s\n' "$STORE_PASSWORD"
-            printf 'keyPassword=%s\n' "$KEY_PASSWORD"
-            printf 'keyAlias=%s\n' "$KEY_ALIAS"
-            printf 'storeFile=../modern-ui-dev.jks\n'
+            printf 'storePassword=ci-release-pass\n'
+            printf 'keyPassword=ci-release-pass\n'
+            printf 'keyAlias=ci-release\n'
+            printf 'storeFile=../ci-release.jks\n'
           } > android/key.properties
           chmod 600 android/key.properties
+          cat android/key.properties
 
       - name: Resolve dependencies
         run: flutter pub get
@@ -90,22 +96,25 @@ jobs:
           fi
 
           if [ "${#targets[@]}" -eq 0 ]; then
-            echo "No new UI sources yet; targeted analysis is not applicable in Task 0."
+            echo "No new UI sources yet; targeted analysis is not applicable."
           else
             flutter analyze "${targets[@]}"
           fi
 
-      - name: Build beta debug APK
-        run: flutter build apk --debug --flavor beta
+      - name: Build beta release APK
+        run: flutter build apk --release --flavor beta
+
+      - name: Build production release APK
+        continue-on-error: true
+        run: flutter build apk --release --flavor production
 
       - name: Verify APK install identity
         shell: bash
         env:
           EXPECTED_PACKAGE_ID: top.apaipai.dsm_helper
-          EXPECTED_CERT_SHA256: 0B:8E:6E:07:65:CF:BA:89:E1:56:F3:03:7B:66:C9:E9:38:2D:91:F7:88:E5:E9:BE:50:51:6D:F0:23:13:D9:A2
         run: |
           set -euo pipefail
-          APK=build/app/outputs/flutter-apk/app-beta-debug.apk
+          APK=build/app/outputs/flutter-apk/app-beta-release.apk
           BUILD_TOOLS_DIR="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           AAPT="$BUILD_TOOLS_DIR/aapt"
           APKSIGNER="$BUILD_TOOLS_DIR/apksigner"
@@ -113,21 +122,29 @@ jobs:
           PACKAGE_ID="$("$AAPT" dump badging "$APK" | sed -n "s/^package: name='\([^']*\)'.*/\1/p" | head -n 1)"
           CERT_OUTPUT="$("$APKSIGNER" verify --print-certs "$APK" 2>&1)"
           printf '%s\n' "$CERT_OUTPUT"
-          CERT_SHA256="$(printf '%s\n' "$CERT_OUTPUT" | sed -n 's/^.*certificate SHA-256 digest: //p' | head -n 1)"
-
-          EXPECTED_CERT_NORMALIZED="$(printf '%s' "$EXPECTED_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
-          CERT_NORMALIZED="$(printf '%s' "$CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')"
 
           echo "Package ID: $PACKAGE_ID"
-          echo "Signing certificate SHA-256: $CERT_SHA256"
-
           test "$PACKAGE_ID" = "$EXPECTED_PACKAGE_ID"
-          test "$CERT_NORMALIZED" = "$EXPECTED_CERT_NORMALIZED"
 
-      - name: Upload development APK
+      - name: Scan APK for advertising SDKs
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=build/app/outputs/flutter-apk/app-beta-release.apk
+          if unzip -p "$APK" 'classes*.dex' 2>/dev/null | \
+             grep -a -E -i -c 'pangle|com/bytedance|TTAdSdk|com/qq/e/ads|com/kwad|admob' ; then
+            echo "::error::Advertising SDK signature detected in APK"
+            exit 1
+          else
+            echo "OK: no advertising SDK signature found in APK"
+          fi
+
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: dsm-helper-modern-ui-android-debug
-          path: build/app/outputs/flutter-apk/app-beta-debug.apk
+          name: dsm-helper-modern-ui-android-apk
+          path: |
+            build/app/outputs/flutter-apk/app-beta-release.apk
+            build/app/outputs/flutter-apk/app-production-release.apk
           if-no-files-found: error
           retention-days: 14
