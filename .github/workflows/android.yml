@@ -80,7 +80,7 @@ jobs:
           echo "Package ID: $PACKAGE_ID"
           test "$PACKAGE_ID" = "fit.flutter.dsm_helper"
 
-      - name: Upload APK artifact (always, even if scan fails)
+      - name: Upload APK artifact (always)
         uses: actions/upload-artifact@v4
         with:
           name: dsm-helper-master-noads-apk
@@ -94,18 +94,35 @@ jobs:
           set -uo pipefail
           APK=build/app/outputs/flutter-apk/app-release.apk
           echo "::group::Scanning $APK for ad SDKs"
-          # 只匹配真正的广告 SDK 符号，不匹配裸词（如注释中的 "pangle"）
-          HARD_PATTERNS="com/bytedance|com/bytedance/sdk|PangleAd|PangleNativeAd|PangleBannerAd|PangleSplashAd|TTAdSdk|com/qq/e/ads|com/kwad/sdk|com/baidu/mobads|com/google/android/gms/ads|com/applovin|com/unity3d/ads|com/inmobi|com/mopub|com/sigmob|com/tradplus|com/anythink"
           HITS=0
-          for pat in $HARD_PATTERNS; do
+          # 逐个检查厂商专属 ad SDK 符号，不匹配裸词
+          for pat in \
+            com/bytedance \
+            com/bytedance/sdk \
+            PangleAd \
+            PangleNativeAd \
+            PangleBannerAd \
+            PangleSplashAd \
+            TTAdSdk \
+            com/qq/e/ads \
+            com/kwad/sdk \
+            com/baidu/mobads \
+            com/google/android/gms/ads \
+            com/applovin \
+            com/unity3d/ads \
+            com/inmobi \
+            com/mopub \
+            com/sigmob \
+            com/tradplus \
+            com/anythink; do
             C=$(unzip -p "$APK" 'classes*.dex' 2>/dev/null | grep -a -i -c "$pat" || true)
             if [ "$C" -gt 0 ]; then
               echo "HIT: $pat x$C"
               HITS=$((HITS + C))
             fi
           done
-          # 也检查原生库文件名
-          for pat in libpangle|pangolin|ttadsdk|libkwad|unityads|libapplovin|mediationsdk|libtopon|libgdt; do
+          # 检查原生库文件名
+          for pat in libpangle pangolin ttadsdk libkwad unityads libapplovin mediationsdk libtopon libgdt; do
             C=$(unzip -l "$APK" 2>/dev/null | grep -a -i -c "$pat" || true)
             if [ "$C" -gt 0 ]; then
               echo "HIT (native lib): $pat x$C"
